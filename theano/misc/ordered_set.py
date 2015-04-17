@@ -46,7 +46,7 @@ if MutableSet is not None:
     class Link(object):
         # This make that we need to use a different pickle protocol
         # then the default.  Othewise, there is pickling errors
-        __slots__ = 'prev', 'next', 'key', '__weakref__'
+        __slots__ = 'prev', '__next__', 'key', '__weakref__'
 
         def __getstate__(self):
             # weakref.proxy don't pickle well, so we use weakref.ref
@@ -61,7 +61,7 @@ if MutableSet is not None:
 
         def __setstate__(self, state):
             self.prev = weakref.ref(state[0])
-            self.next = weakref.ref(state[1])
+            self.__next__ = weakref.ref(state[1])
             if len(state) == 3:
                 self.key = state[2]
 
@@ -102,8 +102,8 @@ if MutableSet is not None:
                 self.__map[key] = link = Link()
                 root = self.__root
                 last = root.prev
-                link.prev, link.next, link.key = last, weakref.ref(root), key
-                last().next = root.prev = weakref.ref(link)
+                link.prev, link.__next__, link.key = last, weakref.ref(root), key
+                last().__next__ = root.prev = weakref.ref(link)
 
         def union(self, s):
             check_deterministic(s)
@@ -139,8 +139,8 @@ if MutableSet is not None:
             # then removed by updating the links in the predecessor and successors.
             if key in self.__map:
                 link = self.__map.pop(key)
-                link.prev().next = link.__next__
-                link.next().prev = link.prev
+                link.prev().__next__ = link.__next__
+                link.__next__().prev = link.prev
 
         def __iter__(self):
             # Traverse the linked list in order.
