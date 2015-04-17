@@ -80,8 +80,8 @@ class OpFromGraph(gof.Op):
                        if not isinstance(var, gof.Constant)]
         shared_vars = [var.type() for var in self.shared_inputs]
         new = rebuild_collect_shared(outputs, inputs=inputs + shared_vars,
-                                     replace=dict(zip(self.shared_inputs,
-                                                      shared_vars)),
+                                     replace=dict(list(zip(self.shared_inputs,
+                                                      shared_vars))),
                                      copy_inputs_over=False)
         (new_inputs, new_outputs,
          [clone_d, update_d, update_expr, shared_inputs]) = new
@@ -143,7 +143,7 @@ class OpFromGraph(gof.Op):
             grad_ops = self.grad_ops
         else:
             gs = theano.gradient.grad(cost=None,
-                        known_grads=dict(zip(self.new_outputs, output_grads)),
+                        known_grads=dict(list(zip(self.new_outputs, output_grads))),
                         wrt=self.new_inputs,
                         disconnected_inputs='ignore')
 

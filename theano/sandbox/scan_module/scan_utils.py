@@ -16,7 +16,7 @@ __contact__ = "Razvan Pascanu <r.pascanu@gmail>"
 import copy
 import logging
 import warnings
-from itertools import izip
+
 
 import numpy
 
@@ -46,7 +46,7 @@ def expand(tensor_var, size):
     # Corner case that I might use in an optimization
     if size == 0:
         return tensor_var
-    shapes = [tensor_var.shape[x] for x in xrange(tensor_var.ndim)]
+    shapes = [tensor_var.shape[x] for x in range(tensor_var.ndim)]
     zeros_shape = [size + shapes[0]] + shapes[1:]
     empty = tensor.zeros(zeros_shape,
                                dtype=tensor_var.dtype)
@@ -313,7 +313,7 @@ def infer_shape(outs, inputs, input_shapes):
     # inside.  We don't use the full ShapeFeature interface, but we
     # let it initialize itself with an empty fgraph, otherwise we will
     # need to do it manually
-    for inp, inp_shp in izip(inputs, input_shapes):
+    for inp, inp_shp in zip(inputs, input_shapes):
         if inp_shp is not None and len(inp_shp) != inp.ndim:
             assert len(inp_shp) == inp.ndim
 
@@ -321,7 +321,7 @@ def infer_shape(outs, inputs, input_shapes):
     shape_feature.on_attach(theano.gof.FunctionGraph([], []))
 
     # Initialize shape_of with the input shapes
-    for inp, inp_shp in izip(inputs, input_shapes):
+    for inp, inp_shp in zip(inputs, input_shapes):
         shape_feature.set_shape(inp, inp_shp)
 
     def local_traverse(out):
@@ -373,7 +373,7 @@ def allocate_memory(T, y_info, y):
         inputs = gof.graph.inputs([y])
         ins_shapes = []
         for inp in inputs:
-            in_shape = [inp.shape[k] for k in xrange(inp.ndim)]
+            in_shape = [inp.shape[k] for k in range(inp.ndim)]
             ins_shapes.append(in_shape)
         shape = infer_shape([y], inputs, ins_shapes)[0]
         return tensor.zeros([T, ] + shape, dtype=y.dtype)
@@ -418,7 +418,7 @@ class ScanPermutation(gof.Op):
             pos = index % membuffer.shape[0]
             if outputs[0] is membuffer:
                 membuffer = membuffer.copy()
-            print pos
+            print(pos)
             out[0][:membuffer.shape[0] - pos] = membuffer[pos:]
             out[0][membuffer.shape[0] - pos:] = membuffer[:pos]
 

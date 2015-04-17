@@ -97,12 +97,12 @@ def conv2d(input, filters, image_shape=None, filter_shape=None,
     # accept Constant value for image_shape and filter_shape.
     if image_shape is not None:
         image_shape = list(image_shape)
-        for i in xrange(len(image_shape)):
+        for i in range(len(image_shape)):
             if image_shape[i] is not None:
                 try:
                     image_shape[i] = get_scalar_constant_value(
                         as_tensor_variable(image_shape[i]))
-                except NotScalarConstantError, e:
+                except NotScalarConstantError as e:
                     raise NotScalarConstantError(
                         "The convolution need that the shape"
                         " information are constant values. We got"
@@ -112,12 +112,12 @@ def conv2d(input, filters, image_shape=None, filter_shape=None,
                 image_shape[i] = int(image_shape[i])
     if filter_shape is not None:
         filter_shape = list(filter_shape)
-        for i in xrange(len(filter_shape)):
+        for i in range(len(filter_shape)):
             if filter_shape[i] is not None:
                 try:
                     filter_shape[i] = get_scalar_constant_value(
                         as_tensor_variable(filter_shape[i]))
-                except NotScalarConstantError, e:
+                except NotScalarConstantError as e:
                     raise NotScalarConstantError(
                         "The convolution need that the shape"
                         " information are constant values. We got"
@@ -130,7 +130,7 @@ def conv2d(input, filters, image_shape=None, filter_shape=None,
         try:
             assert image_shape[1] == filter_shape[1]
         except Exception:
-            print 'image ', image_shape, ' filters ', filter_shape
+            print('image ', image_shape, ' filters ', filter_shape)
             raise
 
     if filter_shape is not None:
@@ -537,7 +537,7 @@ class ConvOp(OpenMPOp):
                     time_unroll_patch = self.speed_unroll_patch_noshape[
                         mode_idx]
                 time_unroll_batch_kern = 9999999
-                for i in xrange(len(self.speed_unroll_batch_kern)):
+                for i in range(len(self.speed_unroll_batch_kern)):
                     if (bsize % self.speed_unroll_batch_kern[i][0] == 0 and
                         nkern % self.speed_unroll_batch_kern[i][1] == 0):
                         if self.speed_unroll_batch_kern[i][2 + mode_idx] < time_unroll_batch_kern:
@@ -761,10 +761,10 @@ class ConvOp(OpenMPOp):
         val = _valfrommode(self.out_mode)
         bval = _bvalfromboundary('fill')
 
-        for b in xrange(bsize):
-            for n in xrange(nkern):
+        for b in range(bsize):
+            for n in range(nkern):
                 zz[b, n, ...].fill(0)
-                for im0 in xrange(stacklen):
+                for im0 in range(stacklen):
                     zz[b, n, ...] += _convolve2d(img2d[b, im0, ...],
                                                  filtersflipped[n, im0, ...],
                                                  1, val, bval, 0)
@@ -779,12 +779,12 @@ class ConvOp(OpenMPOp):
                 img2d = img2d2
             #N_image_shape = image_data.shape
 
-            for b in xrange(bsize):
-                for n in xrange(nkern):
+            for b in range(bsize):
+                for n in range(nkern):
                     zz[b, n, ...].fill(0)
-                    for im0 in xrange(stacklen):
-                        for row in xrange(0, zz.shape[2], self.dx):
-                            for col in xrange(0, zz.shape[3], self.dy):
+                    for im0 in range(stacklen):
+                        for row in range(0, zz.shape[2], self.dx):
+                            for col in range(0, zz.shape[3], self.dy):
                                 zz[b, n, row, col] += (img2d[b, im0, row:row + kshp[0], col:col + kshp[1]] *
                                                             filtersflipped[n, im0, ::-1, ::-1]).sum()
 
@@ -1832,7 +1832,7 @@ def gen_conv_code_unroll_batch_kern(d, unroll_bsize=1, unroll_ksize=1):
 
     def my_dup(st, size):
         s = ""
-        for i in xrange(size):
+        for i in range(size):
             d["unroll_iter"] = i
             s += st % d
         return s + "\n"
@@ -1840,9 +1840,9 @@ def gen_conv_code_unroll_batch_kern(d, unroll_bsize=1, unroll_ksize=1):
     def my_dup2(st):
         s = ""
         iter = 0
-        for i in xrange(unroll_bsize):
+        for i in range(unroll_bsize):
             d["unroll_biter"] = i
-            for j in xrange(unroll_ksize):
+            for j in range(unroll_ksize):
                 d["unroll_kiter"] = j
                 d["unroll_iter"] = iter
                 iter += 1

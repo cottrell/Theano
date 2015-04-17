@@ -1,6 +1,6 @@
-import cPickle
+import pickle
 from copy import copy
-from itertools import imap
+
 import unittest
 
 import numpy
@@ -347,7 +347,7 @@ class test_CAReduce(unittest_tools.InferShapeTester):
                 e = as_tensor_variable(tensor_op(x, axis=tosum, **d))
 
             if tosum is None:
-                tosum = range(len(xsh))
+                tosum = list(range(len(xsh)))
 
             f = copy(linker).accept(FunctionGraph([x], [e])).make_function()
             xv = numpy.asarray(numpy.random.rand(*xsh))
@@ -461,7 +461,7 @@ class test_CAReduce(unittest_tools.InferShapeTester):
             else:
                 e = tensor_op(x, axis=tosum)
             if tosum is None:
-                tosum = range(len(xsh))
+                tosum = list(range(len(xsh)))
             f = copy(linker).accept(FunctionGraph([x],
                                                   [e.shape])).make_function()
             if not(scalar_op in [scalar.maximum, scalar.minimum] and
@@ -544,7 +544,7 @@ class test_CAReduce(unittest_tools.InferShapeTester):
             if pre_scalar_op is not None:
                 x = pre_scalar_op(x)
             if tosum is None:
-                tosum = range(len(xsh))
+                tosum = list(range(len(xsh)))
             xv = numpy.asarray(numpy.random.rand(*xsh), dtype=dtype)
             d = {}
             if pre_scalar_op is not None:
@@ -707,9 +707,9 @@ class test_Prod(unittest.TestCase):
     def test_pickle_bug(self):
         # Regression test for bug fixed in 24d4fd291054.
         o = Prod()
-        s = cPickle.dumps(o, protocol=-1)
-        o = cPickle.loads(s)
-        cPickle.dumps(o)
+        s = pickle.dumps(o, protocol=-1)
+        o = pickle.loads(s)
+        pickle.dumps(o)
 
 
 class test_IsInf_IsNan(unittest.TestCase):
@@ -759,7 +759,7 @@ class T_reduce_dtype(unittest.TestCase):
     op = CAReduce
     axes = [None, 0, 1, [], [0], [1], [0, 1]]
     methods = ['sum', 'prod']
-    dtypes = imap(str, theano.scalar.all_types)
+    dtypes = map(str, theano.scalar.all_types)
 
     def test_reduce_default_dtype(self):
         """
@@ -914,7 +914,7 @@ class T_mean_dtype(unittest.TestCase):
         """
         # We try multiple axis combinations even though axis should not matter.
         axes = [None, 0, 1, [], [0], [1], [0, 1]]
-        for idx, dtype in enumerate(imap(str, theano.scalar.all_types)):
+        for idx, dtype in enumerate(map(str, theano.scalar.all_types)):
             axis = axes[idx % len(axes)]
             x = tensor.matrix(dtype=dtype)
             m = x.mean(axis=axis)
@@ -935,9 +935,9 @@ class T_mean_dtype(unittest.TestCase):
         # We try multiple axis combinations even though axis should not matter.
         axes = [None, 0, 1, [], [0], [1], [0, 1]]
         idx = 0
-        for input_dtype in imap(str, theano.scalar.all_types):
+        for input_dtype in map(str, theano.scalar.all_types):
             x = tensor.matrix(dtype=input_dtype)
-            for sum_dtype in imap(str, theano.scalar.all_types):
+            for sum_dtype in map(str, theano.scalar.all_types):
                 axis = axes[idx % len(axes)]
                 # If the inner sum cannot be created, it will raise a
                 # TypeError.
@@ -993,7 +993,7 @@ class T_prod_without_zeros_dtype(unittest.TestCase):
         """
         # We try multiple axis combinations even though axis should not matter.
         axes = [None, 0, 1, [], [0], [1], [0, 1]]
-        for idx, dtype in enumerate(imap(str, theano.scalar.all_types)):
+        for idx, dtype in enumerate(map(str, theano.scalar.all_types)):
             axis = axes[idx % len(axes)]
             x = ProdWithoutZeros(axis=axis)(tensor.matrix(dtype=dtype))
             assert x.dtype == dict(
@@ -1011,7 +1011,7 @@ class T_prod_without_zeros_dtype(unittest.TestCase):
         """
         # We try multiple axis combinations even though axis should not matter.
         axes = [None, 0, 1, [], [0], [1], [0, 1]]
-        for idx, dtype in enumerate(imap(str, theano.scalar.all_types)):
+        for idx, dtype in enumerate(map(str, theano.scalar.all_types)):
             axis = axes[idx % len(axes)]
             x = tensor.matrix(dtype=dtype)
             p = ProdWithoutZeros(axis=axis)(x)
@@ -1041,9 +1041,9 @@ class T_prod_without_zeros_dtype(unittest.TestCase):
         # We try multiple axis combinations even though axis should not matter.
         axes = [None, 0, 1, [], [0], [1], [0, 1]]
         idx = 0
-        for input_dtype in imap(str, theano.scalar.all_types):
+        for input_dtype in map(str, theano.scalar.all_types):
             x = tensor.matrix(dtype=input_dtype)
-            for output_dtype in imap(str, theano.scalar.all_types):
+            for output_dtype in map(str, theano.scalar.all_types):
                 axis = axes[idx % len(axes)]
                 prod_woz_var = ProdWithoutZeros(
                         axis=axis, dtype=output_dtype)(x)
@@ -1065,9 +1065,9 @@ class T_prod_without_zeros_dtype(unittest.TestCase):
         # We try multiple axis combinations even though axis should not matter.
         axes = [None, 0, 1, [], [0], [1], [0, 1]]
         idx = 0
-        for input_dtype in imap(str, theano.scalar.all_types):
+        for input_dtype in map(str, theano.scalar.all_types):
             x = tensor.matrix(dtype=input_dtype)
-            for acc_dtype in imap(str, theano.scalar.all_types):
+            for acc_dtype in map(str, theano.scalar.all_types):
                 axis = axes[idx % len(axes)]
                 # If acc_dtype would force a downcast, we expect a TypeError
                 # We always allow int/uint inputs with float/complex outputs.
@@ -1231,7 +1231,9 @@ def test_not_implemented_elemwise_grad():
         def impl(self, n, x):
             return x * n
 
-        def grad(self, (n, x), (gz,)):
+        def grad(self, xxx_todo_changeme, xxx_todo_changeme1):
+            (n, x) = xxx_todo_changeme
+            (gz,) = xxx_todo_changeme1
             dy_dx = n
             return [theano.gradient.grad_not_implemented(self, 0, n),
                     gz * dy_dx]

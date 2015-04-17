@@ -4,7 +4,7 @@ try:
     ker_shape =  int(sys.argv[3]), int(sys.argv[4])
     dtype = sys.argv[5]
 except:
-    print >> sys.stderr, "Usage: %s <img rows> <img cols> <ker rows> <ker cols> <dtype> [nb_call]" % sys.argv[0]
+    print("Usage: %s <img rows> <img cols> <ker rows> <ker cols> <dtype> [nb_call]" % sys.argv[0], file=sys.stderr)
     sys.exit(-1)
 
 nb_call = 1
@@ -26,5 +26,5 @@ def f():
     convolve2d(img, ker, mode="valid")
 """)
 time = T.repeat(repeat=3, number=nb_call)
-print min(time), "scipy"
+print(min(time), "scipy")
 

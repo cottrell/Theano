@@ -179,11 +179,11 @@ class TestSP(unittest.TestCase):
                     ntime1 = time.time()
                     refout = numpy.zeros((bsize, nkern, outshp[1], outshp[2]))
                     patch = numpy.zeros((kshp[0], kshp[1]))
-                    for b in xrange(bsize):
-                        for k in xrange(nkern):
+                    for b in range(bsize):
+                        for k in range(nkern):
                             pixi = 0  # pixel index in raster order
-                            for j in xrange(outshp[1]):
-                                for i in xrange(outshp[2]):
+                            for j in range(outshp[1]):
+                                for i in range(outshp[2]):
                                     n = j * ss[0]
                                     m = i * ss[1]
                                     patch = zeropad_img[b, n:n+kshp[0], m:m+kshp[1]]

@@ -15,6 +15,7 @@ import theano.tensor.tests.test_opt as test_opt
 from theano.tests import unittest_tools as utt
 
 import theano.sandbox.cuda as cuda
+from functools import reduce
 
 if not cuda.cuda_available:
     raise SkipTest('Optional package cuda disabled')
@@ -480,7 +481,7 @@ def test_elemwise_fusion():
     f = pfunc([b, c], [a + b + c], mode=mode_with_gpu)
     topo = f.maker.fgraph.toposort()
     for i, node in enumerate(topo):
-        print >> sys.stdout, i, node
+        print(i, node, file=sys.stdout)
     assert len(topo) == 4
     assert isinstance(topo[2].op.scalar_op, theano.scalar.basic.Composite)
     # let debugmode catch errors
@@ -517,7 +518,7 @@ def test_incsubtensor_mixed():
     f = theano.function([X, Y], Z, mode=mode_with_gpu)
     packed, = f.maker.fgraph.inputs[1].clients
     client, idx = packed
-    print client
+    print(client)
     assert isinstance(client.op, tensor.Elemwise)
     assert isinstance(client.op.scalar_op, theano.scalar.Cast)
     packed, = client.outputs[0].clients

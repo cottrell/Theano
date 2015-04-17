@@ -76,7 +76,7 @@ if sys.version_info[:2] < (2, 5):
             else:
                 args = self.default_factory,
             # consider replacing items() with iteritems()
-            return type(self), args, None, None, self.items()
+            return type(self), args, None, None, list(self.items())
 
         def copy(self):
             return self.__copy__()
@@ -87,7 +87,7 @@ if sys.version_info[:2] < (2, 5):
         def __deepcopy__(self, memo):
             import copy
             return type(self)(self.default_factory,
-                              copy.deepcopy(self.items()))
+                              copy.deepcopy(list(self.items())))
 
         def __repr__(self):
             return 'defaultdict(%s, %s)' % (self.default_factory,
@@ -96,9 +96,9 @@ if sys.version_info[:2] < (2, 5):
 else:
     # Only bother with this else clause and the __all__ line if you are putting
     # this in a separate file.
-    import __builtin__
-    all = __builtin__.all
-    any = __builtin__.any
+    import builtins
+    all = builtins.all
+    any = builtins.any
     import collections
     import functools
     partial = functools.partial
@@ -116,10 +116,10 @@ if sys.version_info[:2] < (2, 6):
         n = len(pool)
         if r > n:
             return
-        indices = range(r)
+        indices = list(range(r))
         yield tuple(pool[i] for i in indices)
         while True:
-            for i in reversed(range(r)):
+            for i in reversed(list(range(r))):
                 if indices[i] != i + n - r:
                     break
             else:
@@ -132,7 +132,7 @@ if sys.version_info[:2] < (2, 6):
     def product(*args, **kwds):
         # product('ABCD', 'xy') --> Ax Ay Bx By Cx Cy Dx Dy
         # product(range(2), repeat=3) --> 000 001 010 011 100 101 110 111
-        pools = map(tuple, args) * kwds.get('repeat', 1)
+        pools = list(map(tuple, args)) * kwds.get('repeat', 1)
         result = [[]]
         for pool in pools:
             result = [x + [y] for x in result for y in pool]
@@ -239,9 +239,9 @@ if sys.version_info[:2] < (2, 7):
             if not self:
                 raise KeyError('dictionary is empty')
             if last:
-                key = reversed(self).next()
+                key = next(reversed(self))
             else:
-                key = iter(self).next()
+                key = next(iter(self))
             value = self.pop(key)
             return key, value
 
@@ -270,7 +270,7 @@ if sys.version_info[:2] < (2, 7):
         def __repr__(self):
             if not self:
                 return '%s()' % (self.__class__.__name__,)
-            return '%s(%r)' % (self.__class__.__name__, self.items())
+            return '%s(%r)' % (self.__class__.__name__, list(self.items()))
 
         def copy(self):
             return self.__class__(self)
@@ -286,7 +286,7 @@ if sys.version_info[:2] < (2, 7):
             if isinstance(other, OrderedDict):
                 if len(self) != len(other):
                     return False
-                for p, q in  zip(self.items(), other.items()):
+                for p, q in  zip(list(self.items()), list(other.items())):
                     if p != q:
                         return False
                 return True
@@ -322,7 +322,7 @@ if sys.version_info[:2] < (2, 7):
 
     from operator import itemgetter
     from heapq import nlargest
-    from itertools import repeat, ifilter
+    from itertools import repeat
 
     class Counter(dict):
         '''Dict subclass for counting hashable objects.  Sometimes called a bag
@@ -359,8 +359,8 @@ if sys.version_info[:2] < (2, 7):
 
             '''
             if n is None:
-                return sorted(self.iteritems(), key=itemgetter(1), reverse=True)
-            return nlargest(n, self.iteritems(), key=itemgetter(1))
+                return sorted(iter(self.items()), key=itemgetter(1), reverse=True)
+            return nlargest(n, iter(self.items()), key=itemgetter(1))
 
         def elements(self):
             '''Iterator over elements repeating each as many times as its count.
@@ -373,7 +373,7 @@ if sys.version_info[:2] < (2, 7):
             elements() will ignore it.
 
             '''
-            for elem, count in self.iteritems():
+            for elem, count in self.items():
                 for _ in repeat(None, count):
                     yield elem
 
@@ -401,7 +401,7 @@ if sys.version_info[:2] < (2, 7):
                 if hasattr(iterable, 'iteritems'):
                     if self:
                         self_get = self.get
-                        for elem, count in iterable.iteritems():
+                        for elem, count in iterable.items():
                             self[elem] = self_get(elem, 0) + count
                     else:
                         dict.update(self, iterable)  # fast path when counter is empty
@@ -499,7 +499,7 @@ if sys.version_info[:2] < (2, 7):
             result = Counter()
             if len(self) < len(other):
                 self, other = other, self
-            for elem in ifilter(self.__contains__, other):
+            for elem in filter(self.__contains__, other):
                 newcount = _min(self[elem], other[elem])
                 if newcount > 0:
                     result[elem] = newcount
@@ -520,7 +520,7 @@ __all__ += ['DictMixin', 'OrderedDict', 'Counter']
 class DefaultOrderedDict(OrderedDict):
     def __init__(self, default_factory=None, *a, **kw):
         if (default_factory is not None and
-            not callable(default_factory)):
+            not isinstance(default_factory, collections.Callable)):
             raise TypeError('first argument must be callable')
         OrderedDict.__init__(self, *a, **kw)
         self.default_factory = default_factory
@@ -542,7 +542,7 @@ class DefaultOrderedDict(OrderedDict):
             args = tuple()
         else:
             args = self.default_factory,
-        return type(self), args, None, None, self.items()
+        return type(self), args, None, None, list(self.items())
 
     def copy(self):
         return self.__copy__()

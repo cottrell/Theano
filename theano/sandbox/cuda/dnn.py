@@ -234,7 +234,7 @@ class GpuDnnConvDesc(GpuOp):
         if isinstance(border_mode, int):
             border_mode = (border_mode, border_mode)
         if isinstance(border_mode, tuple):
-            pad_h, pad_w = map(int, border_mode)
+            pad_h, pad_w = list(map(int, border_mode))
             border_mode = (pad_h, pad_w)
         if not ((isinstance(border_mode, tuple) and min(border_mode) >= 0) or
                 border_mode in ('valid', 'full')):
@@ -262,7 +262,7 @@ class GpuDnnConvDesc(GpuOp):
         desc, = outputs
 
         if isinstance(self.border_mode, tuple):
-            pad_h_spec, pad_w_spec = map(int, self.border_mode)
+            pad_h_spec, pad_w_spec = list(map(int, self.border_mode))
             assert pad_h_spec >= 0 and pad_w_spec >= 0
             bmode = 2
         else:

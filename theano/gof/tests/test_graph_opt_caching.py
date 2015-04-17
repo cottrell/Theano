@@ -1,6 +1,6 @@
 import unittest, os
 import numpy
-import cPickle
+import pickle
 from theano.compat.python2x import DictMixin, OrderedDict
 floatX = 'float32'
 import theano

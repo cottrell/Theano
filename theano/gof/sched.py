@@ -36,8 +36,9 @@ def memodict(f):
 
 def make_depends():
     @memodict
-    def depends((a, b)):
+    def depends(xxx_todo_changeme):
         """ Returns True if a depends on b """
+        (a, b) = xxx_todo_changeme
         return (any(bout in a.inputs for bout in b.outputs)
                 or any(depends((ainp.owner, b)) for ainp in a.inputs
                        if ainp.owner))
@@ -103,7 +104,7 @@ def _toposort(edges):
     [2] http://en.wikipedia.org/wiki/Toposort#Algorithms
     """
     incoming_edges = reverse_dict(edges)
-    incoming_edges = dict((k, set(val)) for k, val in incoming_edges.items())
+    incoming_edges = dict((k, set(val)) for k, val in list(incoming_edges.items()))
     S = set((v for v in edges if v not in incoming_edges))
     L = []
 

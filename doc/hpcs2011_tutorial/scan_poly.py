@@ -18,5 +18,5 @@ calculate_polynomial = theano.function(inputs=[coefficients, x],
                                        outputs=polynomial)
 
 test_coeff = numpy.asarray([1, 0, 2], dtype=numpy.float32)
-print calculate_polynomial(test_coeff, 3)
+print(calculate_polynomial(test_coeff, 3))
 # 19.0

@@ -42,10 +42,10 @@ def py_conv_valid_numpy(img, kern):
             img.shape[2] - kern.shape[2] + 1,
             img.shape[3] - kern.shape[3] + 1)
     out = numpy.zeros(outshp, dtype='float32')
-    for b in xrange(out.shape[0]):
-        for k in xrange(out.shape[1]):
-            for rr in xrange(out.shape[2]):
-                for cc in xrange(out.shape[3]):
+    for b in range(out.shape[0]):
+        for k in range(out.shape[1]):
+            for rr in range(out.shape[2]):
+                for cc in range(out.shape[3]):
                     # rr, cc is the upper-left corner of img patches
                     imgpatch = img[b, :, rr:rr + kern.shape[2],
                                    cc:cc + kern.shape[3]]
@@ -96,9 +96,9 @@ def py_conv_scipy(img, kern, mode, subsample):
                 img.shape[2] + kern.shape[2] - 1,
                 img.shape[3] + kern.shape[3] - 1)
     out = numpy.zeros(outshp, dtype='float32')
-    for b in xrange(out.shape[0]):
-        for k in xrange(out.shape[1]):
-            for s in xrange(img.shape[1]):
+    for b in range(out.shape[0]):
+        for k in range(out.shape[1]):
+            for s in range(img.shape[1]):
                 out[b, k, :, :] += convolve2d(img[b, s, :, :],
                                               kern[k, s, :, :],
                                               mode)
@@ -106,7 +106,7 @@ def py_conv_scipy(img, kern, mode, subsample):
 
 
 def _params_allgood_header():
-    print "ishape kshape #Mflops CPU Mflops GPU Mflops Speedup"
+    print("ishape kshape #Mflops CPU Mflops GPU Mflops Speedup")
 
 
 def _params_allgood(ishape, kshape, mode, subsample=(1, 1), img_stride=(1, 1),
@@ -175,14 +175,14 @@ def _params_allgood(ishape, kshape, mode, subsample=(1, 1), img_stride=(1, 1),
             assert (numpy.asarray(gpuval) == numpy.asarray(gpuval2)).all()
         gpuval = numpy.asarray(gpuval)
         if gpuval.shape != cpuval.shape:
-            print >> sys.stdout, "ERROR: shape mismatch",
-            print >> sys.stdout, gpuval.shape, cpuval.shape
+            print("ERROR: shape mismatch", end=' ', file=sys.stdout)
+            print(gpuval.shape, cpuval.shape, file=sys.stdout)
             rval = False
         if rval:
             rval = numpy.allclose(cpuval, gpuval, rtol=rtol)
             assert numpy.all(numpy.isfinite(gpuval))
-    except NotImplementedError, e:
-        print >> sys.stdout, '_params_allgood Failed allclose', e
+    except NotImplementedError as e:
+        print('_params_allgood Failed allclose', e, file=sys.stdout)
         rval = False
 
     if (t2 is not None):
@@ -195,38 +195,38 @@ def _params_allgood(ishape, kshape, mode, subsample=(1, 1), img_stride=(1, 1),
         cpu_mflops = approx_fp / (t1 - t0)
         gpu_mflops = approx_fp / (t2 - t1)
         if verbose > 0:
-            print >> sys.stdout, '%15s' % str(ishape), '%15s' % str(kshape),
-            print >> sys.stdout, '%12.5f  %7.2f %7.2f %7.1f' % (approx_fp,
-                    cpu_mflops, gpu_mflops, (t1 - t0) / (t2 - t1))
+            print('%15s' % str(ishape), '%15s' % str(kshape), end=' ', file=sys.stdout)
+            print('%12.5f  %7.2f %7.2f %7.1f' % (approx_fp,
+                    cpu_mflops, gpu_mflops, (t1 - t0) / (t2 - t1)), file=sys.stdout)
     if not rval:
-        print >> sys.stdout, ('test_' + mode + ' id=' + str(id) +
+        print(('test_' + mode + ' id=' + str(id) +
                               ' FAILED for ishape, kshape, mode, subsample,' +
                               ' img_stride, kern_stride, version', ishape,
                               kshape, mode, subsample, img_stride, kern_stride,
-                              version)
+                              version), file=sys.stdout)
         diff = cpuval - gpuval
         diffabs = numpy.absolute(diff)
         pr_diff = diffabs / numpy.absolute(cpuval)
         nb_close = (diffabs <= (atol + rtol * numpy.absolute(gpuval))).sum()
-        print "max absolute diff:", (diffabs.max(), "avg abs diff:",
-                                     numpy.average(diffabs))
-        print "median abs diff:", (numpy.median(diffabs), "nb close:",
-                                   nb_close, "/", diff.size)
-        print "max relatif diff:", (pr_diff.max(), "avg rel diff:",
-                                    numpy.average(pr_diff))
+        print("max absolute diff:", (diffabs.max(), "avg abs diff:",
+                                     numpy.average(diffabs)))
+        print("median abs diff:", (numpy.median(diffabs), "nb close:",
+                                   nb_close, "/", diff.size))
+        print("max relatif diff:", (pr_diff.max(), "avg rel diff:",
+                                    numpy.average(pr_diff)))
     if not rval and print_ != False:
         if npy_img.shape[0] > 5:
-            print "img", npy_img[0]
-            print "kern", npy_kern[0]
-            print "gpu", gpuval[0][0]
-            print "cpu", cpuval[0][0]
-            print "diff", diff[0][0]
+            print("img", npy_img[0])
+            print("kern", npy_kern[0])
+            print("gpu", gpuval[0][0])
+            print("cpu", cpuval[0][0])
+            print("diff", diff[0][0])
         else:
-            print "img", npy_img
-            print "kern", npy_kern
-            print "gpu", gpuval
-            print "cpu", cpuval
-            print "diff", diff
+            print("img", npy_img)
+            print("kern", npy_kern)
+            print("gpu", gpuval)
+            print("cpu", cpuval)
+            print("diff", diff)
 
     return rval
 
@@ -259,9 +259,9 @@ def exec_conv(version, shapes, verbose, random, mode,
                         print_=print_,
                         rtol=rtol,
                         ones=ones)
-            except Exception, e:
-                print ver, id, (ishape, kshape, subshape, istride, kstride)
-                print e
+            except Exception as e:
+                print(ver, id, (ishape, kshape, subshape, istride, kstride))
+                print(e)
                 pass
             if not ret:
                 failed_version.add(ver)
@@ -269,11 +269,11 @@ def exec_conv(version, shapes, verbose, random, mode,
                 nb_failed += 1
             nb_tests += 1
     if nb_failed > 0:
-        print "nb_failed", nb_failed, "on", nb_tests,
-        print "failed_version", failed_version, "failed_id", failed_id
+        print("nb_failed", nb_failed, "on", nb_tests, end=' ')
+        print("failed_version", failed_version, "failed_id", failed_id)
         assert nb_failed == 0, nb_failed
     else:
-        print 'Executed', nb_tests, 'different shapes'
+        print('Executed', nb_tests, 'different shapes')
 
 
 def get_basic_shapes():

@@ -78,8 +78,8 @@ def load_reduce(self):
                 pass
 
         if self.is_verbose:
-            print(sys.exc_info())
-            print(func, args)
+            print((sys.exc_info()))
+            print((func, args))
 
         raise
 

@@ -33,7 +33,7 @@ class GpuConvGrad3D(GpuOp):
 
     def perform_(self, node, inputs, output_storage):
         V, d, WShape, dCdH = inputs
-        print "GpuConvGrad3D python code (warning not updated to new format)"
+        print("GpuConvGrad3D python code (warning not updated to new format)")
 
         # partial C / partial W[j,z,k,l,m] = sum_i sum_p sum_q sum_r (partial C /partial H[i,j,p,q,r] ) *  V[i,z,dr*p+k,dc*q+l,dt*r+m]
 
@@ -52,17 +52,17 @@ class GpuConvGrad3D(GpuOp):
         dCdW = numpy.zeros(WShape, dtype=V.dtype)
 
         # block
-        for j in xrange(0, WShape[0]):
-            for z in xrange(0, WShape[1]):
-                for k in xrange(0, WShape[2]):
-                    for l in xrange(0, WShape[3]):
+        for j in range(0, WShape[0]):
+            for z in range(0, WShape[1]):
+                for k in range(0, WShape[2]):
+                    for l in range(0, WShape[3]):
                         # threads
-                        for m in xrange(0, WShape[4]):
+                        for m in range(0, WShape[4]):
                             # thread
-                            for i in xrange(0, batchSize):
-                                for p in xrange(0, outputHeight):
-                                    for q in xrange(0, outputWidth):
-                                        for r in xrange(0, outputDur):
+                            for i in range(0, batchSize):
+                                for p in range(0, outputHeight):
+                                    for q in range(0, outputWidth):
+                                        for r in range(0, outputDur):
                                             dCdW[j, z, k, l, m] += dCdH[i, j, p, q, r] * V[i, z, dr*p+k, dc*q+l, dt*r+m]
 
         output_storage[0][0] = dCdW

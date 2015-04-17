@@ -71,7 +71,9 @@ class Poisson(gof.op.Op):
         x = as_sparse_variable(x)
         return gof.Apply(self, [x], [x.type()])
 
-    def perform(self, node, (x, ), (out, )):
+    def perform(self, node, xxx_todo_changeme, xxx_todo_changeme1):
+        (x, ) = xxx_todo_changeme
+        (out, ) = xxx_todo_changeme1
         assert _is_sparse(x)
         assert x.format in ["csr", "csc"]
         out[0] = x.copy()
@@ -130,7 +132,9 @@ class Binomial(gof.op.Op):
                          [SparseType(dtype=self.dtype,
                                      format=self.format).make_variable()])
 
-    def perform(self, node, (n, p, shape, ), (out, )):
+    def perform(self, node, xxx_todo_changeme2, xxx_todo_changeme3):
+        (n, p, shape, ) = xxx_todo_changeme2
+        (out, ) = xxx_todo_changeme3
         binomial = numpy.random.binomial(n, p, size=shape)
         csx_matrix = getattr(scipy.sparse, self.format + '_matrix')
         out[0] = csx_matrix(binomial, dtype=self.dtype)
@@ -138,7 +142,9 @@ class Binomial(gof.op.Op):
     def connection_pattern(self, node):
         return [[True], [True], [False]]
 
-    def grad(self, (n, p, shape, ), (gz,)):
+    def grad(self, xxx_todo_changeme4, xxx_todo_changeme5):
+        (n, p, shape, ) = xxx_todo_changeme4
+        (gz,) = xxx_todo_changeme5
         comment_n = "No gradient exists for the number of samples in class\
                      Binomial of theano/sparse/sandbox/sp2.py"
         comment_p = "No gradient exists for the prob of success in class\
@@ -196,7 +202,9 @@ class Multinomial(gof.op.Op):
 
         return gof.Apply(self, [n, p], [p.type()])
 
-    def perform(self, node, (n, p), (out, )):
+    def perform(self, node, xxx_todo_changeme6, xxx_todo_changeme7):
+        (n, p) = xxx_todo_changeme6
+        (out, ) = xxx_todo_changeme7
         assert _is_sparse(p)
 
         if p.format != 'csr':
@@ -205,14 +213,14 @@ class Multinomial(gof.op.Op):
         out[0] = p.copy()
 
         if n.ndim == 0:
-            for i in xrange(p.shape[0]):
+            for i in range(p.shape[0]):
                 k, l = p.indptr[i], p.indptr[i + 1]
                 out[0].data[k:l] = numpy.random.multinomial(n, p.data[k:l])
         elif n.ndim == 1:
             if n.shape[0] != p.shape[0]:
                 raise ValueError('The number of element of n must be '
                                  'the same as the number of row of p.')
-            for i in xrange(p.shape[0]):
+            for i in range(p.shape[0]):
                 k, l = p.indptr[i], p.indptr[i + 1]
                 out[0].data[k:l] = numpy.random.multinomial(n[i], p.data[k:l])
 

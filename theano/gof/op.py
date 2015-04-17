@@ -17,7 +17,7 @@ import logging
 import numpy
 import os
 import re
-import StringIO
+import io
 import sys
 import traceback
 import warnings
@@ -452,14 +452,14 @@ class PureOp(object):
             # ensure that the test value is correct
             try:
                 ret = v.type.filter(v.tag.test_value)
-            except Exception, e:
+            except Exception as e:
                 # Better error message.
                 detailed_err_msg = (
                     "For compute_test_value, one input test value does not"
                     " have the requested type.\n")
                 tr = getattr(v.tag, 'trace', None)
                 if tr:
-                    sio = StringIO.StringIO()
+                    sio = io.StringIO()
                     traceback.print_list(tr, sio)
                     tr = sio.getvalue()
                     detailed_err_msg += (
@@ -538,7 +538,7 @@ class PureOp(object):
                 # copy the values of the inputs in destroy_map
                 destroyed_inputs_idx = set()
                 if getattr(node.op, 'destroy_map', None):
-                    for i_pos_list in node.op.destroy_map.itervalues():
+                    for i_pos_list in node.op.destroy_map.values():
                         destroyed_inputs_idx.update(i_pos_list)
                 for inp_idx in destroyed_inputs_idx:
                     inp = node.inputs[inp_idx]
@@ -1077,14 +1077,14 @@ class COp(Op):
             func_files = [func_files]
 
         self.func_files = [self.get_path(f) for f in func_files]
-        self.func_name = func_name
+        self.__name__ = func_name
 
         self.load_c_code()
 
         if len(self.code_sections) == 0:
             raise ValueError("No sections where defined in C files")
 
-        if self.func_name is not None:
+        if self.__name__ is not None:
             if 'op_code' in self.code_sections:
                 # maybe a warning instead (and clearing the key)
                 raise ValueError('Cannot have an "op_code" section and '
@@ -1288,9 +1288,9 @@ class COp(Op):
                 'c_init_code_struct', type(self), type(self).__name__)
 
     def c_code(self, node, name, inp, out, sub):
-        if self.func_name is not None:
+        if self.__name__ is not None:
             assert 'code' not in self.code_sections
-            func_name = self.func_name
+            func_name = self.__name__
             func_args = self.format_c_function_args(inp, out)
             fail = sub['fail']
 
@@ -1306,7 +1306,7 @@ class COp(Op):
   }
 }
 %(undef_macros)s
-""" % dict(func_name=self.func_name, fail=sub['fail'],
+""" % dict(func_name=self.__name__, fail=sub['fail'],
            func_args=self.format_c_function_args(inp, out),
            define_macros=define_macros, undef_macros=undef_macros)
         else:

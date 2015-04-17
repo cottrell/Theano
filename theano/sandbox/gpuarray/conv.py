@@ -6,6 +6,7 @@ from theano import config, gof
 from .comp import NVCC_compiler
 from .type import GpuArrayType
 from .basic_ops import as_gpuarray_variable
+from functools import reduce
 
 
 class GpuConv(gof.Op):

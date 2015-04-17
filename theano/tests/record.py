@@ -173,7 +173,7 @@ class RecordMode(Mode):
         if record is None:
             record = Record(**kwargs)
         else:
-            assert len(kwargs.keys()) == 0
+            assert len(list(kwargs.keys())) == 0
 
         self.set_record(record)
 
@@ -194,20 +194,20 @@ class RecordMode(Mode):
             """
             try:
                 self.record.handle_line(line)
-            except MismatchError, e:
-                print 'Got this MismatchError:'
-                print e
-                print 'while processing node i='+str(i)+':'
-                print 'str(node):', str(node)
-                print 'Symbolic inputs: '
+            except MismatchError as e:
+                print('Got this MismatchError:')
+                print(e)
+                print('while processing node i='+str(i)+':')
+                print('str(node):', str(node))
+                print('Symbolic inputs: ')
                 for elem in node.inputs:
-                    print theano.printing.min_informative_str(elem)
-                print 'str(output) of outputs: '
+                    print(theano.printing.min_informative_str(elem))
+                print('str(output) of outputs: ')
                 for elem in fn.outputs:
                     assert isinstance(elem, list)
                     elem, = elem
-                    print str(elem)
-                print 'function name: '+node.fgraph.name
+                    print(str(elem))
+                print('function name: '+node.fgraph.name)
                 raise MismatchError("Non-determinism detected by WrapLinker")
 
         def callback(i, node, fn):

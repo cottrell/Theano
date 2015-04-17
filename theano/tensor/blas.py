@@ -133,6 +133,7 @@ import warnings
 import numpy
 import numpy.distutils
 import numpy.distutils.system_info
+from functools import reduce
 try:
     import numpy.distutils.__config__
 except ImportError:
@@ -180,7 +181,7 @@ def default_blas_ldflags():
     try:
         theano.function([x], theano.tensor.blas._dot22(x,x))
     except Exception as e:
-        print e
+        print(e)
         yield ""
 
 
@@ -349,7 +350,7 @@ try:
             numpy.dtype('complex64'): fblas.cgemv,
             numpy.dtype('complex128'): fblas.zgemv,
             }
-except ImportError, e:
+except ImportError as e:
     have_fblas = False
     # This is used in Gemv and ScipyGer. We use CGemv and CGer
     # when theano.config.blas.ldflags is defined. So we don't need a
@@ -957,7 +958,7 @@ class Gemm(GemmRelated):
         return dict(inplace=self.inplace)
 
     def make_node(self, *inputs):
-        inputs = map(T.as_tensor_variable, inputs)
+        inputs = list(map(T.as_tensor_variable, inputs))
         if len(inputs) != 5:
             raise TypeError(
                 "Wrong number of inputs for %s (expected 5, got %s)" %
@@ -967,7 +968,7 @@ class Gemm(GemmRelated):
         # For the consistency check we don't want z to be a cached constant.
         if getattr(z, 'cached', False):
             z = copy.copy(z)
-        zr, xr, yr = [set(view_roots(i)) for i in z, x, y]
+        zr, xr, yr = [set(view_roots(i)) for i in (z, x, y)]
 
         # We want the gemm to be inplace. When this op is inplace, it
         # declare to be inplace only on z. So to make it safe, we
@@ -1444,10 +1445,10 @@ def _gemm_from_factored_list(lst):
         return s * M
 
     # Try every pair in the sM_list, trying to turn it into a gemm operation
-    for i in xrange(len(lst) - 1):
+    for i in range(len(lst) - 1):
         s_i, M_i = lst[i]
 
-        for j in xrange(i + 1, len(lst)):
+        for j in range(i + 1, len(lst)):
             s_j, M_j = lst[j]
 
             if M_i.type != M_j.type:
@@ -1561,7 +1562,7 @@ class GemmOptimizer(Optimizer):
                     time_canonicalize += time1
                     time_factor_can += time2
                     time_factor_list += time3
-                except InconsistencyError, e:
+                except InconsistencyError as e:
                     nb_inconsistency_make += 1
                     continue
                 if new_outputs:
@@ -1569,7 +1570,7 @@ class GemmOptimizer(Optimizer):
                     assert len(new_outputs) == len(node.outputs)
                     try:
                         fgraph.replace_all_validate_remove(
-                            zip(node.outputs, new_outputs),
+                            list(zip(node.outputs, new_outputs)),
                             [old_dot22],
                             reason='GemmOptimizer',
                             # For now we disable the warning as we know case
@@ -1578,11 +1579,11 @@ class GemmOptimizer(Optimizer):
                         )
                         did_something = True
                         nb_replacement += 1
-                    except InconsistencyError, e:
+                    except InconsistencyError as e:
                         # TODO: retry other applications of gemm (see comment
                         # in _gemm_from_node)
                         nb_inconsistency_replace += 1
-                    except ReplacementDidntRemovedError, e:
+                    except ReplacementDidntRemovedError as e:
                         nb_replacement_didn_t_remove += 1
                         self.warned = True
         fgraph.remove_feature(u)
@@ -1590,7 +1591,7 @@ class GemmOptimizer(Optimizer):
             validate_time = fgraph.profile.validate_time - validate_before
             callback_time = fgraph.execute_callbacks_time - callback_before
             callbacks_time = {}
-            for k, v in fgraph.execute_callbacks_times.iteritems():
+            for k, v in fgraph.execute_callbacks_times.items():
                 if k in callbacks_before:
                     callbacks_time[k] = v - callbacks_before[k]
                 else:
@@ -1609,23 +1610,23 @@ class GemmOptimizer(Optimizer):
     @staticmethod
     def print_profile(stream, prof, level=0):
         blanc = ('    ' * level)
-        print >> stream, blanc, "GemmOptimizer"
-        print >> stream, blanc, " nb_iter", prof[1]
-        print >> stream, blanc, " nb_replacement", prof[2]
-        print >> stream, blanc, " nb_replacement_didn_t_remove", prof[3]
-        print >> stream, blanc, " nb_inconsistency_make", prof[4]
-        print >> stream, blanc, " nb_inconsistency_replace", prof[5]
-        print >> stream, blanc, " time_canonicalize", prof[6]
-        print >> stream, blanc, " time_factor_can", prof[7]
-        print >> stream, blanc, " time_factor_list", prof[8]
-        print >> stream, blanc, " time_toposort", prof[9]
-        print >> stream, blanc, " validate_time", prof[10]
-        print >> stream, blanc, " callback_time", prof[11]
+        print(blanc, "GemmOptimizer", file=stream)
+        print(blanc, " nb_iter", prof[1], file=stream)
+        print(blanc, " nb_replacement", prof[2], file=stream)
+        print(blanc, " nb_replacement_didn_t_remove", prof[3], file=stream)
+        print(blanc, " nb_inconsistency_make", prof[4], file=stream)
+        print(blanc, " nb_inconsistency_replace", prof[5], file=stream)
+        print(blanc, " time_canonicalize", prof[6], file=stream)
+        print(blanc, " time_factor_can", prof[7], file=stream)
+        print(blanc, " time_factor_list", prof[8], file=stream)
+        print(blanc, " time_toposort", prof[9], file=stream)
+        print(blanc, " validate_time", prof[10], file=stream)
+        print(blanc, " callback_time", prof[11], file=stream)
         if prof[11] > 1:
-            print >> stream, blanc, " callbacks_time"
-            for i in sorted(prof[12].iteritems(), key=lambda a: a[1]):
+            print(blanc, " callbacks_time", file=stream)
+            for i in sorted(iter(prof[12].items()), key=lambda a: a[1]):
                 if i[1] > 0:
-                    print i
+                    print(i)
 
 
 class Dot22(GemmRelated):
@@ -1649,7 +1650,7 @@ class Dot22(GemmRelated):
         z, = out
         try:
             z[0] = numpy.asarray(numpy.dot(x, y))
-        except ValueError, e:
+        except ValueError as e:
             # The error raised by numpy has no shape information, we mean to
             # add that
             e.args = e.args + (x.shape, y.shape)
@@ -1921,7 +1922,7 @@ class Dot22Scalar(GemmRelated):
         z, = out
         try:
             z[0] = numpy.asarray(scalar * numpy.dot(x, y))
-        except ValueError, e:
+        except ValueError as e:
             # The error raised by numpy has no shape information, we
             # mean to add that
             e.args = e.args + (x.shape, y.shape)

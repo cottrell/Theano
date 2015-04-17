@@ -4,8 +4,8 @@
 __docformat__ = "restructuredtext en"
 
 import copy
-import copy_reg
-import cPickle
+import copyreg
+import pickle
 import itertools
 import time
 import warnings
@@ -59,7 +59,7 @@ def view_tree_set(v, treeset):
             continue
         vmap = getattr(cl.op, 'view_map', {})
         dmap = getattr(cl.op, 'destroy_map', {})
-        for opos, iposlist in vmap.items() + dmap.items():
+        for opos, iposlist in list(vmap.items()) + list(dmap.items()):
             if v_input_pos_to_cl in iposlist:
                 if cl.outputs[opos] not in treeset:
                     view_tree_set(cl.outputs[opos], treeset)
@@ -93,7 +93,7 @@ def fgraph_updated_vars(fgraph, expanded_inputs):
     potential_values = list(fgraph.outputs)  # copy the list
     if len(expanded_inputs) != len(fgraph.inputs):
         raise ValueError('expanded_inputs must match len(fgraph.inputs)')
-    for e_input, ivar in reversed(zip(expanded_inputs, fgraph.inputs)):
+    for e_input, ivar in reversed(list(zip(expanded_inputs, fgraph.inputs))):
         if e_input.update is not None:
             updated_vars[ivar] = potential_values.pop()
     return updated_vars
@@ -159,7 +159,7 @@ def std_fgraph(input_specs, output_specs, accept_inplace=False):
     # If named nodes are replaced, keep the name
     for feature in std_fgraph.features:
         fgraph.attach_feature(feature())
-    return fgraph, map(SymbolicOutput, updates)
+    return fgraph, list(map(SymbolicOutput, updates))
 
 
 std_fgraph.features = [gof.toolbox.PreserveNames]
@@ -457,7 +457,7 @@ class Function(object):
                 self.n_returned_outputs -= 1
 
         for node in self.maker.fgraph.apply_nodes:
-            if node.op in ops_with_inner_function.keys():
+            if node.op in list(ops_with_inner_function.keys()):
                 self.nodes_with_inner_function.append(node.op)
 
     def __contains__(self, item):
@@ -514,7 +514,7 @@ class Function(object):
                         s.storage[0] = s.type.filter(arg, strict=s.strict,
                                 allow_downcast=s.allow_downcast)
 
-                    except Exception, e:
+                    except Exception as e:
                         function_name = "theano function"
                         if self.name:
                             function_name += ' with name "' + self.name + '" '
@@ -530,7 +530,7 @@ class Function(object):
 
         # Set keyword arguments
         if kwargs:  # for speed, skip the iteritems for empty kwargs
-            for k, arg in kwargs.iteritems():
+            for k, arg in kwargs.items():
                 self[k] = arg
 
         if not self.trust_input and (
@@ -538,14 +538,14 @@ class Function(object):
             self._check_for_aliased_inputs):
             # Collect aliased inputs among the storage space
             args_share_memory = []
-            for i in xrange(len(self.input_storage)):
+            for i in range(len(self.input_storage)):
                 i_var = self.maker.inputs[i].variable
                 i_val = self.input_storage[i].storage[0]
                 if hasattr(i_var.type, 'may_share_memory'):
                     is_aliased = False
-                    for j in xrange(len(args_share_memory)):
+                    for j in range(len(args_share_memory)):
 
-                        group_j = itertools.izip(
+                        group_j = zip(
                             [self.maker.inputs[k].variable for k
                              in args_share_memory[j]],
                             [self.input_storage[k].storage[0] for k
@@ -646,8 +646,8 @@ class Function(object):
 
         if getattr(self.fn, 'need_update_inputs', True):
             # Update the inputs that have an update function
-            for input, storage in reversed(zip(self.maker.expanded_inputs,
-                                               self.input_storage)):
+            for input, storage in reversed(list(zip(self.maker.expanded_inputs,
+                                               self.input_storage))):
                 if input.update is not None:
                     storage.data = outputs.pop()
         else:
@@ -683,7 +683,7 @@ class Function(object):
 
                 assert len(self.output_keys) == len(outputs)
 
-                return dict(itertools.izip(self.output_keys, outputs))
+                return dict(zip(self.output_keys, outputs))
 
             return outputs
 
@@ -702,7 +702,7 @@ class Function(object):
         """
         # 1.no allow_gc return False 2.has allow_gc, if allow_gc is False, return True
         if not getattr(self.fn, 'allow_gc', True):
-            for key in self.fn.storage_map.keys():
+            for key in list(self.fn.storage_map.keys()):
                 if not isinstance(key, theano.gof.Constant):
                     self.fn.storage_map[key][0] = None
             
@@ -761,7 +761,7 @@ def _constructor_Function(maker, input_storage, inputs_data):
             (container.data == x)
     return f
 
-copy_reg.pickle(Function, _pickle_Function)
+copyreg.pickle(Function, _pickle_Function)
 
 
 ###
@@ -790,12 +790,12 @@ def insert_deepcopy(fgraph, wrapped_inputs, wrapped_outputs):
     # We can't use fgraph.inputs as this don't include Constant Value.
     all_graph_inputs = gof.graph.inputs(fgraph.outputs)
 
-    for i in xrange(len(fgraph.outputs)):
+    for i in range(len(fgraph.outputs)):
         views_of_output_i = set()
         view_tree_set(alias_root(fgraph.outputs[i]), views_of_output_i)
         copied = False
         # do not allow outputs to be aliased
-        for j in xrange(i + 1, len(fgraph.outputs)):
+        for j in range(i + 1, len(fgraph.outputs)):
             # We could don't put deep copy if both outputs have borrow==True
             # and not(wrapped_outputs[i].borrow and wrapped_outputs[j].borrow):
             if fgraph.outputs[j] in views_of_output_i:
@@ -907,11 +907,11 @@ class FunctionMaker(object):
         # Could be refactored in different functions.
         def load_graph_db():
             if os.path.isfile(graph_db_file):
-                print 'graph_db already exists'
+                print('graph_db already exists')
             else:
                 # create graph_db
                 f = open(graph_db_file, 'wb')
-                print 'create new graph_db in %s' % graph_db_file
+                print('create new graph_db in %s' % graph_db_file)
                 # file needs to be open and closed for every pickle
                 f.close()
             # load the graph_db dictionary
@@ -921,15 +921,15 @@ class FunctionMaker(object):
                 # to finish. Should be changed in definitive version.
                 tmp = theano.config.unpickle_function
                 theano.config.unpickle_function = False
-                graph_db = cPickle.load(f)
+                graph_db = pickle.load(f)
                 
                 # hack end
                 f.close()
-                print 'graph_db loaded and it is not empty'
-            except EOFError, e:
+                print('graph_db loaded and it is not empty')
+            except EOFError as e:
                 # the file has nothing in it
-                print e
-                print 'graph_db loaded and it is empty'
+                print(e)
+                print('graph_db loaded and it is empty')
                 graph_db = {}
             finally:
                 theano.config.unpickle_function = tmp
@@ -943,7 +943,7 @@ class FunctionMaker(object):
             # The sole purpose of this loop is to set 'need_optimize' by
             # going through graph_db, looking for graph that has the same
             # computation performed.
-            for graph_old, graph_optimized in graph_db.iteritems():
+            for graph_old, graph_optimized in graph_db.items():
                 inputs_old = graph_old.inputs
                 outputs_old = graph_old.outputs
                 size_old = len(graph_old.apply_nodes)
@@ -952,29 +952,29 @@ class FunctionMaker(object):
                 if len(inputs_new) != len(inputs_old):
                     # If the inputs are of different size,
                     # two graphs are for sure different
-                    print 'need to optimize, because input size is different'
+                    print('need to optimize, because input size is different')
                     continue
                 elif len(outputs_new) != len(outputs_old):
                     # If the inputs are of different size,
                     # two graphs are for sure different
-                    print 'need to optimize, because output size is different'
+                    print('need to optimize, because output size is different')
                     continue
                 elif not all(input_new.type == input_old.type for
                              input_new, input_old in zip(inputs_new, inputs_old)):
-                    print 'need to optimize, because inputs are of different types'
+                    print('need to optimize, because inputs are of different types')
                     continue
                 elif not all(output_new.type == output_old.type for
                              output_new, output_old in zip(outputs_new, outputs_old)):
-                    print 'need to optimize, because outputs are of different types'
+                    print('need to optimize, because outputs are of different types')
                     continue
                 elif not size_old == size_new:
-                    print 'need to optimize, because numbers of nodes in graph are different'
+                    print('need to optimize, because numbers of nodes in graph are different')
                     continue
                 else:
                     flags = []
                     for output_new, output_old, i in zip(
-                            outputs_new, outputs_old, range(len(outputs_new))):
-                        print 'loop through outputs node for both graphs'
+                            outputs_new, outputs_old, list(range(len(outputs_new)))):
+                        print('loop through outputs node for both graphs')
                         graph_old.variables = set(gof.graph.variables(
                             graph_old.inputs, graph_old.outputs))
 
@@ -1004,16 +1004,16 @@ class FunctionMaker(object):
 
                         t2 = removeAllFgraph(t2)
 
-                        givens = dict(zip(gof.graph.inputs([t1]),
-                                        gof.graph.inputs([t2])))
+                        givens = dict(list(zip(gof.graph.inputs([t1]),
+                                        gof.graph.inputs([t2]))))
 
-                        temp = dict(zip(gof.graph.inputs([t1]),
-                                    gof.graph.inputs([t2])))
+                        temp = dict(list(zip(gof.graph.inputs([t1]),
+                                    gof.graph.inputs([t2]))))
 
                         # hack to remove inconstent entry in givens
                         # seems to work that but source of inconsistency
                         # could be worth investigating.
-                        for key, value in temp.iteritems():
+                        for key, value in temp.items():
                             if key.type != value.type:
                                 del givens[key]
 
@@ -1024,20 +1024,20 @@ class FunctionMaker(object):
                     is_same = all(flags)
                     if is_same:
                         # found the match
-                        print 'found a match, no need to optimize'
+                        print('found a match, no need to optimize')
                         found_graph_in_db = graph_optimized
                         break
             return found_graph_in_db
                    
         graph_db = load_graph_db()
-        print 'loaded graph_db from %s, size=%d' % (graph_db_file, len(graph_db))
+        print('loaded graph_db from %s, size=%d' % (graph_db_file, len(graph_db)))
         found_graph = find_same_graph_in_db(graph_db)
         if found_graph:
             self.fgraph = found_graph
             optimizer_profile = None
         else:
             # this is a brand new graph, optimize it, save it to graph_db
-            print 'graph not found in graph_db, optimizing the graph'
+            print('graph not found in graph_db, optimizing the graph')
             self.fgraph.variables = set(gof.graph.variables(
                 self.fgraph.inputs, self.fgraph.outputs))
             # check_integrity parameters was added to ignore
@@ -1048,9 +1048,9 @@ class FunctionMaker(object):
             optimizer_profile = optimizer(self.fgraph)
             graph_db.update({before_opt: self.fgraph})
             f = open(graph_db_file, 'wb')
-            cPickle.dump(graph_db, f, -1)
+            pickle.dump(graph_db, f, -1)
             f.close()
-            print 'new graph saved into graph_db'
+            print('new graph saved into graph_db')
         release_lock()
         return optimizer_profile
                 
@@ -1126,7 +1126,7 @@ class FunctionMaker(object):
             inputs = [inputs]
 
         # Wrap them in In or Out instances if needed.
-        inputs, outputs = map(self.wrap_in, inputs), map(self.wrap_out, outputs)
+        inputs, outputs = list(map(self.wrap_in, inputs)), list(map(self.wrap_out, outputs))
         _inputs = gof.graph.inputs([o.variable for o in outputs] + [i.update
             for i in inputs if getattr(i, 'update', False)])
 
@@ -1186,7 +1186,7 @@ class FunctionMaker(object):
         # initialize the linker
         if not hasattr(linker, 'accept'):
             raise ValueError("'linker' parameter of FunctionMaker should be a Linker with an accept method " \
-                             "or one of %s" % theano.compile.mode.predefined_linkers.keys())
+                             "or one of %s" % list(theano.compile.mode.predefined_linkers.keys()))
 
         # the 'no_borrow' outputs are the ones for which that we can't return the internal storage pointer.
         assert len(fgraph.outputs) == len(outputs + additional_outputs)
@@ -1374,19 +1374,19 @@ def _constructor_FunctionMaker(kwargs):
     else:
         return None
 
-copy_reg.pickle(FunctionMaker, _pickle_FunctionMaker)
+copyreg.pickle(FunctionMaker, _pickle_FunctionMaker)
 
 
 try:
     # Pickle of slice is implemented on python 2.6.  To enabled be
     # compatible with python 2.4, we implement pickling of slice
     # ourself.
-    cPickle.dumps(slice(0, 10, 100))
+    pickle.dumps(slice(0, 10, 100))
 except TypeError:
     # This slice pickle implementation seam backward and forward compatible.
     def _pickle_slice(s):
         return (slice, (s.start, s.stop, s.step))
-    copy_reg.pickle(slice, _pickle_slice)
+    copyreg.pickle(slice, _pickle_slice)
 
 
 __checkers = []
@@ -1461,10 +1461,10 @@ def orig_function(inputs, outputs, mode=None, accept_inplace=False,
     t1 = time.time()
     mode = theano.compile.mode.get_mode(mode)
 
-    inputs = map(convert_function_input, inputs)
+    inputs = list(map(convert_function_input, inputs))
     if outputs is not None:
         if isinstance(outputs, (list, tuple)):
-            outputs = map(FunctionMaker.wrap_out, outputs)
+            outputs = list(map(FunctionMaker.wrap_out, outputs))
         else:
             outputs = FunctionMaker.wrap_out(outputs)
 
@@ -1524,7 +1524,7 @@ def convert_function_input(input):
         orig = input
         if not input:
             raise TypeError("Nonsensical input specification: %s" % input)
-        if isinstance(input[0], basestring):
+        if isinstance(input[0], str):
             name = input[0]
             input = input[1:]
         else:

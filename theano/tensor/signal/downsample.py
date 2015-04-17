@@ -5,7 +5,7 @@ DownsampleFactorMax, DownsampleAvg, DownsampleSoftmax.
 
 """
 # This file should move along with conv.py
-import __builtin__
+import builtins
 
 import numpy
 
@@ -15,7 +15,7 @@ from theano import gof, Op, tensor, Variable, Apply
 
 def max_pool2D(*args, **kwargs):
     import sys
-    print >> sys.stderr, "DEPRECATION: max_pool2D renamed to max_pool_2d"
+    print("DEPRECATION: max_pool2D renamed to max_pool_2d", file=sys.stderr)
     return max_pool_2d(*args, **kwargs)
 
 
@@ -262,14 +262,14 @@ class DownsampleFactorMax(Op):
         else:
             y = x
         # max pooling
-        for n in xrange(x.shape[0]):
-            for k in xrange(x.shape[1]):
-                for r in xrange(pr):
+        for n in range(x.shape[0]):
+            for k in range(x.shape[1]):
+                for r in range(pr):
                     row_st = r * st0
-                    row_end = __builtin__.min(row_st + ds0, img_rows)
-                    for c in xrange(pc):
+                    row_end = builtins.min(row_st + ds0, img_rows)
+                    for c in range(pc):
                         col_st = c * st1
-                        col_end = __builtin__.min(col_st + ds1, img_cols)
+                        col_end = builtins.min(col_st + ds1, img_cols)
                         zz[n, k, r, c] = y[
                             n, k, row_st:row_end, col_st:col_end].max()
 
@@ -491,16 +491,16 @@ class DownsampleFactorMaxGrad(Op):
         else:
             y = x
         gx = numpy.zeros_like(y)
-        for n in xrange(x.shape[0]):
-            for k in xrange(x.shape[1]):
-                for r in xrange(pr):
+        for n in range(x.shape[0]):
+            for k in range(x.shape[1]):
+                for r in range(pr):
                     row_st = r * st0
-                    row_end = __builtin__.min(row_st + ds0, img_rows)
-                    for c in xrange(pc):
+                    row_end = builtins.min(row_st + ds0, img_rows)
+                    for c in range(pc):
                         col_st = c * st1
-                        col_end = __builtin__.min(col_st + ds1, img_cols)
-                        for row_ind in xrange(row_st, row_end):
-                            for col_ind in xrange(col_st, col_end):
+                        col_end = builtins.min(col_st + ds1, img_cols)
+                        for row_ind in range(row_st, row_end):
+                            for col_ind in range(col_st, col_end):
                                 if (maxout[n, k, r, c] == y[n, k, row_ind, col_ind]):
                                     gx[n, k, row_ind, col_ind] += gz[n, k, r, c]
         # unpad the image
@@ -751,16 +751,16 @@ class DownsampleFactorMaxGradGrad(Op):
         img_rows = x.shape[-2]
         img_cols = x.shape[-1]
 
-        for n in xrange(x.shape[0]):
-            for k in xrange(x.shape[1]):
-                for r in xrange(pr):
+        for n in range(x.shape[0]):
+            for k in range(x.shape[1]):
+                for r in range(pr):
                     row_st = r * st0
-                    row_end = __builtin__.min(row_st + ds0, img_rows)
-                    for c in xrange(pc):
+                    row_end = builtins.min(row_st + ds0, img_rows)
+                    for c in range(pc):
                         col_st = c * st1
-                        col_end = __builtin__.min(col_st + ds1, img_cols)
-                        for row_ind in xrange(row_st, row_end):
-                            for col_ind in xrange(col_st, col_end):
+                        col_end = builtins.min(col_st + ds1, img_cols)
+                        for row_ind in range(row_st, row_end):
+                            for col_ind in range(col_st, col_end):
                                 if (maxout[n, k, r, c] == x[n, k, row_ind, col_ind]):
                                     ggz[n, k, r, c] = ggx[n, k, row_ind, col_ind]
 

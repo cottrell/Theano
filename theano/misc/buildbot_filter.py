@@ -23,6 +23,6 @@ if __name__ == "__main__":
     import pdb
     pdb.set_trace()
     if len(sys.argv) > 1:
-        print filter_output(open(sys.argv[1]))
+        print(filter_output(open(sys.argv[1])))
     else:
-        print filter_output(sys.stdin)
+        print(filter_output(sys.stdin))

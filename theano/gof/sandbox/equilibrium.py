@@ -1,3 +1,4 @@
+from functools import reduce
 
 if 0:
     class _EquilibriumOptimizer(NavigatorOptimizer):
@@ -58,12 +59,12 @@ if 0:
             nodes = [node]
             while candidates:
                 for node in nodes:
-                    candidates = filter(node, depth)
+                    candidates = list(filter(node, depth))
                 depth += 1
                 _nodes = nodes
                 nodes = reduce(list.__iadd__,
                                [reduce(list.__iadd__,
-                                       [[n for n, i in out.clients if not isinstance(n, basestring)] for out in node.outputs],
+                                       [[n for n, i in out.clients if not isinstance(n, str)] for out in node.outputs],
                                        []) for node in nodes],
                                [])
                 candidates = tracks
@@ -98,14 +99,14 @@ if 0:
                 tasks[node].extend(lopt for track, i, lopt in self.fetch_tracks0(node.op))
 
             u = self.attach_updater(fgraph, importer, pruner, chin)
-            print 'KEYS', map(hash, tasks.keys())
+            print('KEYS', list(map(hash, list(tasks.keys()))))
             while tasks:
-                for node in tasks.iterkeys():
+                for node in tasks.keys():
                     todo = tasks.pop(node)
                     break
                 for lopt in todo:
                     if runs is not None and runs[lopt] >= max_uses:
-                        print >>sys.stderr, 'Warning: optimization exceeded its maximal use ratio: %s, %s' % (lopt, max_uses)
+                        print('Warning: optimization exceeded its maximal use ratio: %s, %s' % (lopt, max_uses), file=sys.stderr)
                         continue
                     success = self.process_node(fgraph, node, lopt)
                     if success:

@@ -42,7 +42,7 @@ class GpuConvTransp3D(GpuOp):
 
     def perform_(self, node, inputs, output_storage):
         W, b, d, H, RShape = inputs
-        print "\t\t\t\tGpuConvTransp3D python code still uses old format"
+        print("\t\t\t\tGpuConvTransp3D python code still uses old format")
         output_storage[0][0] = computeR(W, b, d, H, RShape)
 
     def c_code_cache_version(self):
@@ -382,7 +382,7 @@ def computeR(W, b, d, H, Rshape=None):
 
         if Rshape is not None and Rshape[0] != -1:
             if Rshape[0] < videoHeight:
-                print (Rshape[0], videoHeight)
+                print((Rshape[0], videoHeight))
                 assert False
             assert Rshape[1] >= videoWidth
             assert Rshape[2] >= videoDur
@@ -399,14 +399,14 @@ def computeR(W, b, d, H, Rshape=None):
             videoWidth, videoDur ) , dtype=H.dtype)
 
         # R[i,j,r,c,t] = b_j + sum_{rc,rk | d \circ rc + rk = r} sum_{cc,ck | ...} sum_{tc,tk | ...} sum_k W[k, j, rk, ck, tk] * H[i,k,rc,cc,tc]
-        for i in xrange(0, batchSize):
+        for i in range(0, batchSize):
             # print '\texample '+str(i+1)+'/'+str(batchSize)
-            for j in xrange(0, inputChannels):
+            for j in range(0, inputChannels):
                 # print '\t\tfeature map '+str(j+1)+'/'+str(inputChannels)
-                for r in xrange(0, videoHeight):
+                for r in range(0, videoHeight):
                     # print '\t\t\trow '+str(r+1)+'/'+str(videoHeight)
-                    for c in xrange(0, videoWidth):
-                        for t in xrange(0, videoDur):
+                    for c in range(0, videoWidth):
+                        for t in range(0, videoDur):
                             R[i, j, r, c, t] = b[j]
 
                             ftc = max([0, int(numpy.ceil(float(t-filterDur + 1  )/float(dt))) ])

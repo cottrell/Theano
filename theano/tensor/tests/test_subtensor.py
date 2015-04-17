@@ -1,4 +1,4 @@
-from itertools import izip
+
 import logging
 import sys
 import unittest
@@ -110,7 +110,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
         n = self.shared(numpy.ones((), dtype=self.dtype))
         try:
             t = n[0]
-        except ValueError, e:
+        except ValueError as e:
             self.assertTrue(hasattr(e, 'subtensor_invalid'))
             return
         self.fail()
@@ -131,7 +131,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
         try:
             try:
                 self.eval_output_and_check(t)
-            except IndexError, e:
+            except IndexError as e:
                 return
             self.fail()
         finally:
@@ -141,7 +141,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
         n = self.shared(numpy.ones(3, dtype=self.dtype))
         try:
             t = n[slice(0, slice(1, 2, None), None)]
-        except Exception, e:
+        except Exception as e:
             # Relax constraint on the type of Exception,
             # since this might be handled by AvancedSubtensor
             # if e[0] != Subtensor.e_indextype:
@@ -178,7 +178,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
         n = self.shared(numpy.ones(1, dtype=self.dtype))
         try:
             t = n[0, 0]
-        except ValueError, e:
+        except ValueError as e:
             self.assertTrue(hasattr(e, 'subtensor_invalid'))
             return
         self.fail()
@@ -304,7 +304,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
 
     def test_long(self):
         n = self.shared(numpy.arange(12, dtype=self.dtype).reshape((4, 3)))
-        t = n[1L:4L:2L, 1L]
+        t = n[1:4:2, 1]
         self.assertTrue(isinstance(t.owner.op, Subtensor))
         tval = self.eval_output_and_check(t)
         self.assertTrue(tval.shape == (2,))
@@ -314,7 +314,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
         # Currently, we cast Python longs to int64 when used for indexing.
         # This test checks that using a long that does not fit raises an error.
         n = self.shared(numpy.arange(12, dtype=self.dtype).reshape((4, 3)))
-        self.assertRaises(Exception, lambda: n[:(2L ** 63)])
+        self.assertRaises(Exception, lambda: n[:(2 ** 63)])
 
     def test_newaxis(self):
         """
@@ -914,7 +914,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
                     data_num_init = numpy.arange(data_size, dtype=self.dtype)
                     data_num_init = data_num_init.reshape(data_shape)
                     inc_shapes = [data_shape[i:]
-                                  for i in xrange(0, len(data_shape) + 1)]
+                                  for i in range(0, len(data_shape) + 1)]
                     for inc_shape in inc_shapes:
                         inc_n_dims = len(inc_shape)
                         # We copy the numeric value to be 100% sure there is no
@@ -1002,7 +1002,7 @@ class T_subtensor(unittest.TestCase, utt.TestOptimizationMixin):
 
         f_outs = f(*all_inputs_num)
         assert len(f_outs) == len(all_outputs_num)
-        for f_out, output_num in izip(f_outs, all_outputs_num):
+        for f_out, output_num in zip(f_outs, all_outputs_num):
             # NB: if this assert fails, it will probably be easier to debug if
             # you enable the debug code above.
             assert numpy.allclose(f_out, output_num)

@@ -21,7 +21,7 @@ from theano.tensor.blas import (_dot22, _dot22scalar, res_is_a, _as_scalar,
                                 gemm_inplace, gemm_no_inplace,
                                 InconsistencyError, Ger, ger, ger_destructive)
 from theano.tests import unittest_tools
-from test_basic import (as_tensor_variable, inplace_func,
+from .test_basic import (as_tensor_variable, inplace_func,
                         compile, inplace)
 import theano.tensor.blas_scipy
 
@@ -72,10 +72,10 @@ class t_gemm(TestCase):
             b = numpy.asarray(b_, dtype=dtype)
 
             def cmp_linker(z, a, x, y, b, l):
-                z, a, x, y, b = [numpy.asarray(p) for p in z, a, x, y, b]
+                z, a, x, y, b = [numpy.asarray(p) for p in (z, a, x, y, b)]
                 z_orig = z.copy()
                 tz, ta, tx, ty, tb = [as_tensor_variable(p).type()
-                                      for p in z, a, x, y, b]
+                                      for p in (z, a, x, y, b)]
 
                 f = inplace_func([tz, ta, tx, ty, tb],
                                  gemm_inplace(tz, ta, tx, ty, tb),
@@ -104,7 +104,7 @@ class t_gemm(TestCase):
         Gemm.debug = True
         try:
             g = gemm_inplace([1.], 1., [1.], [1.], 1.)
-        except TypeError, e:
+        except TypeError as e:
             if exc_message(e) is Gemm.E_rank:
                 return
         self.fail()
@@ -112,7 +112,7 @@ class t_gemm(TestCase):
     def test0(self):
         try:
             self.cmp(1., 0., 1.0, 1.0, 1.0)
-        except TypeError, e:
+        except TypeError as e:
             if exc_message(e) is Gemm.E_rank:
                 return
         self.fail()
@@ -120,7 +120,7 @@ class t_gemm(TestCase):
     def test2(self):
         try:
             self.cmp(2., 1.0, [3, 2, 1.], [[1], [2], [3.]], 1.0)
-        except TypeError, e:
+        except TypeError as e:
             self.assertTrue(exc_message(e) == Gemm.E_rank)
             return
         self.fail()
@@ -211,7 +211,7 @@ class t_gemm(TestCase):
         Z = as_tensor_variable(self.rand(2, 2))
         try:
             gemm_inplace(Z, 1.0, Z, Z, 1.0)
-        except InconsistencyError, e:
+        except InconsistencyError as e:
             if exc_message(e) == Gemm.E_z_uniq:
                 return
         self.fail()
@@ -222,7 +222,7 @@ class t_gemm(TestCase):
         A = as_tensor_variable(self.rand(2, 2))
         try:
             gemm_inplace(Z, 1.0, A, inplace.transpose_inplace(Z), 1.0)
-        except InconsistencyError, e:
+        except InconsistencyError as e:
             if exc_message(e) == Gemm.E_z_uniq:
                 return
         self.fail()
@@ -233,7 +233,7 @@ class t_gemm(TestCase):
         A = as_tensor_variable(self.rand(2, 2))
         try:
             gemm_inplace(Z, 1.0, inplace.transpose_inplace(Z), A, 1.0)
-        except InconsistencyError, e:
+        except InconsistencyError as e:
             if exc_message(e) == Gemm.E_z_uniq:
                 return
         self.fail()
@@ -244,7 +244,7 @@ class t_gemm(TestCase):
         A = as_tensor_variable(self.rand(2, 2))
         try:
             gemm_inplace(Z, 1.0, Z, A, 1.0)
-        except InconsistencyError, e:
+        except InconsistencyError as e:
             if exc_message(e) == Gemm.E_z_uniq:
                 return
         self.fail()
@@ -267,11 +267,11 @@ class t_gemm(TestCase):
 
         def t(z, x, y, a=1.0, b=0.0, l='c|py', dt='float64'):
             z, a, x, y, b = [theano._asarray(p, dtype=dt)
-                             for p in z, a, x, y, b]
+                             for p in (z, a, x, y, b)]
             z_orig = z.copy()
             z_after = self._gemm(z, a, x, y, b)
 
-            tz, ta, tx, ty, tb = [shared(p) for p in z, a, x, y, b]
+            tz, ta, tx, ty, tb = [shared(p) for p in (z, a, x, y, b)]
 
             # f = inplace_func([tz,ta,tx,ty,tb], gemm_inplace(tz,ta,tx,ty,tb),
             #                 mode = compile.Mode(optimizer = None, linker=l))
@@ -313,7 +313,7 @@ class t_gemm(TestCase):
 
         try:
             t(C.T, A[:2, :], B[:, :2].T)
-        except ValueError, e:
+        except ValueError as e:
             if exc_message(e).find('aligned') >= 0:
                 return
         self.fail()
@@ -327,20 +327,20 @@ class t_gemm(TestCase):
 
         def t(z, x, y, a=1.0, b=0.0, l='c|py', dt='float64'):
             z, a, x, y, b = [theano._asarray(p, dtype=dt)
-                             for p in z, a, x, y, b]
+                             for p in (z, a, x, y, b)]
             z_orig = z.copy()
             z_after = numpy.zeros_like(z_orig)
-            for i in xrange(3):
+            for i in range(3):
                 z_after[:, :, i] = self._gemm(z[:, :, i], a,
                                               x[:, :, i], y[:, :, i], b)
 
-            tz, ta, tx, ty, tb = [shared(p) for p in z, a, x, y, b]
-            for i in xrange(3):
+            tz, ta, tx, ty, tb = [shared(p) for p in (z, a, x, y, b)]
+            for i in range(3):
                 f_i = inplace_func([],
                         gemm_inplace(tz[:, :, i],
                              ta, tx[:, :, i], ty[:, :, i], tb),
                         mode=compile.Mode(optimizer=None, linker=l))
-                for j in xrange(3):
+                for j in range(3):
                     # tz will not _always_ be overwritten,
                     # and adding update={...} in the call to function()
                     # will create cycles, so we update by hand.
@@ -356,7 +356,7 @@ class t_gemm(TestCase):
                 g_i = theano.function([], tz_i,
                         updates=[(tz, T.set_subtensor(tz[:, :, i], tz_i))],
                         mode=compile.Mode(optimizer=None, linker=l))
-                for j in xrange(3):
+                for j in range(3):
                     g_i()
                     unittest_tools.assert_allclose(z_after[:, :, i],
                                                    tz.get_value(borrow=True)[:, :, i])
@@ -433,7 +433,7 @@ class T_real_matrix(TestCase):
 
 
 def fail(msg):
-    print 'FAIL', msg
+    print('FAIL', msg)
     assert False
 
 
@@ -495,7 +495,7 @@ def just_gemm(i, o, ishapes=[(4, 3), (3, 5), (4, 5), (), ()],
                           max_abs_err)
     except Failure:
         for node in f.maker.fgraph.toposort():
-            print 'GRAPH', node
+            print('GRAPH', node)
         raise
 
 
@@ -570,7 +570,7 @@ def test_gemm_opt_double_gemm():
                 max_abs_err)
     except Failure:
         for node in f.maker.fgraph.toposort():
-            print 'GRAPH', node
+            print('GRAPH', node)
         raise
 
 
@@ -780,7 +780,7 @@ def test_gemm_unrolled():
         def update_H(cur_V):
             return T.nnet.sigmoid(T.dot(cur_V, W) + T.dot(G, W.T))
 
-        for i in xrange(num_rounds):
+        for i in range(num_rounds):
             cur_V = update_V(cur_H)
             cur_H = update_H(cur_V)
 
@@ -807,7 +807,7 @@ def test_inplace0():
     f = inplace_func([Z, b, R, S],
             [Z * (Z + b * T.dot(R, S).T)], mode='FAST_RUN')
     if (gemm_inplace in [n.op for n in f.maker.fgraph.apply_nodes]):
-        print pp(f.maker.fgraph.outputs[0])
+        print(pp(f.maker.fgraph.outputs[0]))
         raise Failure('gemm_inplace in graph')
     assert gemm_no_inplace in [n.op for n in f.maker.fgraph.apply_nodes]
 
@@ -1273,10 +1273,10 @@ def matrixmultiply(a, b):
         b_is_vector = False
     assert a.shape[1] == b.shape[0]
     c = zeros((a.shape[0], b.shape[1]), common_type(a, b))
-    for i in xrange(a.shape[0]):
-        for j in xrange(b.shape[1]):
+    for i in range(a.shape[0]):
+        for j in range(b.shape[1]):
             s = 0
-            for k in xrange(a.shape[1]):
+            for k in range(a.shape[1]):
                 s += a[i, k] * b[k, j]
             c[i, j] = s
     if b_is_vector:
@@ -1546,13 +1546,13 @@ class TestGer_make_node(TestCase):
         self.za = T.zscalar()
 
     def test_works_on_all_valid_dtypes(self):
-        self.assertEquals(self.fm.type,
+        self.assertEqual(self.fm.type,
             ger(self.fm, self.fa, self.fv, self.fv_2).type)
-        self.assertEquals(self.fm.type,
+        self.assertEqual(self.fm.type,
             ger(self.fm, self.fa, self.fv, self.fv_2).type)
-        self.assertEquals(self.fm.type,
+        self.assertEqual(self.fm.type,
             ger(self.fm, self.fa, self.fv, self.fv_2).type)
-        self.assertEquals(self.fm.type,
+        self.assertEqual(self.fm.type,
             ger(self.fm, self.fa, self.fv, self.fv_2).type)
 
     def test_fails_on_invalid_dtypes(self):
@@ -1568,7 +1568,7 @@ class TestGer_make_node(TestCase):
         self.assertRaises(TypeError,
                 ger, self.fm, self.fv1, self.fv, self.fv_2)
         # actually doing the aforementioned dimshuffle makes it work
-        self.assertEquals(self.fm.type,
+        self.assertEqual(self.fm.type,
                 ger(self.fm, self.fv1.dimshuffle(), self.fv, self.fv_2).type)
 
     def test_fails_for_nonmatrix_A(self):

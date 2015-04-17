@@ -1,6 +1,7 @@
 import copy, inspect
 import theano
 import theano.tensor as T
+import collections
 
 #import klass
 
@@ -23,29 +24,26 @@ class InitGraph(type):
                     return True
                 return isinstance(v, theano.Variable) and not k.startswith('_')
             r = {}
-            for key, val in dct.items():
-                if filter(key, val):
+            for key, val in list(dct.items()):
+                if list(filter(key, val)):
                     r[key] = val
             return r
         build_graph_rval = cls.build_graph()
         if not isinstance(build_graph_rval, dict):
             raise TypeError('%s.build_graph did not return dictionary' % cls)
         dct = just_symbolic(build_graph_rval)
-        for key, val in dct.items():
+        for key, val in list(dct.items()):
             # print '  adding class attribute', key
             if isinstance(val, theano.Variable) and val.name is None:
                 val.name = key
-            if callable(val):
+            if isinstance(val, collections.Callable):
                 setattr(cls, key, staticmethod(val))
             else:
                 setattr(cls, key, val)
 
 
-class SymbolicModule(object):
+class SymbolicModule(object, metaclass=InitGraph):
     # installs class attributes from build_graph after declaration
-    __metaclass__ = InitGraph
-
-    # if we call this function, it will return a new SymbolicModule
     def __new__(self, **kwargs):
         class SymMod(SymbolicModule):
             @staticmethod
@@ -97,7 +95,7 @@ def compile_fn(f, path_locals, common_inputs):
     # this has the effect of creating new storage for these arguments
     # The common storage doesn't get messed with.
     inputs = [In(path_locals.get(name, name)) for name in args]
-    inputs.extend([v for k, v in common_inputs.items() if k not in args])
+    inputs.extend([v for k, v in list(common_inputs.items()) if k not in args])
     outputs = f()
     # print 'inputs', inputs
     # print 'outputs', outputs
@@ -126,12 +124,12 @@ def compile(smod, initial_values=None):
                     for s in modwalker(path_locals, val):
                         yield s
                 elif isinstance(val, dict):
-                    for s in modwalker(path_locals, val.values()):
+                    for s in modwalker(path_locals, list(val.values())):
                         yield s
                 elif issymbolicmodule(val):
                     for s in modwalker(val.__dict__, [v for k, v in sym_items(val)]):
                         yield s
-                elif isinstance(val, (basestring, int, float)):
+                elif isinstance(val, (str, int, float)):
                     pass
                 elif isinstance(val, theano.Variable):
                     pass
@@ -150,7 +148,7 @@ def compile(smod, initial_values=None):
         if isinstance(val, theano.Variable) and (val.owner is None) and (val not in inputs):
             inputs[val] = theano.In(val, value=theano.gof.Container(val, ['a']))
 
-    assert len(inputs) == len([v for v in inputs.items()])
+    assert len(inputs) == len([v for v in list(inputs.items())])
 
     # Locate all the functions to compile, and compile them
     compiled_functions = {}
@@ -182,7 +180,7 @@ def compile(smod, initial_values=None):
                 reflected[thing] = cmod
                 for key, val in sym_items(thing):
                     setattr(CMod, key, reflect(val))
-            elif isinstance(thing, (basestring, int, float)):
+            elif isinstance(thing, (str, int, float)):
                 reflected[thing] = thing
             elif isinstance(thing, theano.Variable):
                 if thing.owner is None:
@@ -191,7 +189,7 @@ def compile(smod, initial_values=None):
                     def setter(s, v):
                         inputs[thing].value.storage[0] = v
                     p = property(getter, setter)
-                    print p
+                    print(p)
                     reflected[thing] = p
                 else:
                     reflected[thing] = None  # TODO: how to reflect derived resuls?
@@ -267,7 +265,7 @@ def NNet(x=None, y=None, n_hid_layers=2):
         y = T.dmatrix()
     layers = []
     _x = x
-    for i in xrange(n_hid_layers):
+    for i in range(n_hid_layers):
         layers.append(Layer(x=_x))
         _x = layers[-1].y
     classif = LR(x=_x)
@@ -277,7 +275,7 @@ def NNet(x=None, y=None, n_hid_layers=2):
         rval = classif.params()
         for l in layers:
             rval.extend(l.params())
-        print [id(r) for r in rval]
+        print([id(r) for r in rval])
         return rval
 
     if 0:
@@ -290,12 +288,12 @@ def NNet(x=None, y=None, n_hid_layers=2):
     return locals()
 nnet = compile(NNet)
 
-print nnet
-print nnet.params()
-print nnet.params.__dict__['finder'][NNet.layers[0].w]
+print(nnet)
+print(nnet.params())
+print(nnet.params.__dict__['finder'][NNet.layers[0].w])
 nnet.params[NNet.layers[0].w] = [[6]]
-print nnet.params()
-print nnet.params()
+print(nnet.params())
+print(nnet.params())
 
 if 0:
     def deco(f):
@@ -303,20 +301,20 @@ if 0:
             def __call__(self, *args, **kwargs):
                 # return another SymbolicModule built like self
                 def dummy(*dargs, **dkwargs):
-                    print 'args', args, dargs
-                    print 'kwargs', kwargs, dkwargs
+                    print('args', args, dargs)
+                    print('kwargs', kwargs, dkwargs)
                     return f(*args, **kwargs)
                 return deco(dummy)
 
         locals_dict = f()
-        for key, val in locals_dict.items():
+        for key, val in list(locals_dict.items()):
             if isinstance(val, theano.Variable):
                 try:
                     kres = klass.KlassMember(val)
                 except Exception:
                     kres = klass.KlassVariable(val)
                 setattr(SymMod, key, kres)
-            elif callable(val) and getattr(val, '__is_symbolic'):
+            elif isinstance(val, collections.Callable) and getattr(val, '__is_symbolic'):
                 setattr(SymMod, key, val)
 
         return SymMod()
@@ -349,7 +347,7 @@ if 0:
             ):
         hid = T.tanh(T.dot(x, w) + b)
         if top_part:
-            print 'top_part', top_part, 'kwargs', kwargs
+            print('top_part', top_part, 'kwargs', kwargs)
             top = top_part(x=hid, **kwargs)  # SymbolicModule
             def params(): return top.params() + [w, b]
         else:
@@ -357,12 +355,12 @@ if 0:
         return just_symbolic(locals())
 
     if 0:
-        print 'logistic_regression', logistic_regression
-        print 'tanh_layer', tanh_layer
-        print 'nnet1', nnet1
+        print('logistic_regression', logistic_regression)
+        print('tanh_layer', tanh_layer)
+        print('nnet1', nnet1)
     nnet1 = tanh_layer(logistic_regression)
     nnet2 = tanh_layer(nnet1)
-    print 'nnet2', nnet2
+    print('nnet2', nnet2)
 
 if 0:
     class SymbolicModule(object):

@@ -1,4 +1,4 @@
-import cPickle
+import pickle
 import numpy
 import unittest
 
@@ -62,7 +62,7 @@ class multiple_outputs_numeric_grad:
         f_x = f(*pt)
         gx = []
         # now iterate over the elements of x and call f on those + delta x
-        for i in xrange(len(pt)):
+        for i in range(len(pt)):
             if ndarray_mask[i]:
                 # It is a ndarray that we can tweak
                 if eps:
@@ -72,7 +72,7 @@ class multiple_outputs_numeric_grad:
                 if pt[i].ndim:
                     _g = []
                     # it has several dimensions:
-                    for pos in xrange(prod(pt[i].shape)):
+                    for pos in range(prod(pt[i].shape)):
                         t = pt[i].copy()
                         t = t.flatten()
                         t[pos] += _eps
@@ -96,7 +96,7 @@ class multiple_outputs_numeric_grad:
         """Return the biggest relative error between g_pt and self.gx"""
 
         g_pt = []
-        for i in xrange(len(_g_pt)):
+        for i in range(len(_g_pt)):
             if self.ndarray_mask[i]:
                 g_pt.append(_g_pt[i])
             elif isinstance(_g_pt[i], numpy.ndarray):

@@ -4,7 +4,7 @@ __docformat__ = "restructuredtext en"
 
 import sys
 import warnings
-from itertools import izip
+
 
 import numpy
 
@@ -46,13 +46,13 @@ python_any = any
 python_all = all
 
 # Define common subsets of dtypes (as strings).
-complex_dtypes = map(str, scal.complex_types)
-continuous_dtypes = map(str, scal.continuous_types)
-float_dtypes = map(str, scal.float_types)
-discrete_dtypes = map(str, scal.discrete_types)
-all_dtypes = map(str, scal.all_types)
-int_dtypes = map(str, scal.int_types)
-uint_dtypes = map(str, scal.uint_types)
+complex_dtypes = list(map(str, scal.complex_types))
+continuous_dtypes = list(map(str, scal.continuous_types))
+float_dtypes = list(map(str, scal.float_types))
+discrete_dtypes = list(map(str, scal.discrete_types))
+all_dtypes = list(map(str, scal.all_types))
+int_dtypes = list(map(str, scal.int_types))
+uint_dtypes = list(map(str, scal.uint_types))
 
 
 class ShapeError(Exception):
@@ -71,7 +71,7 @@ def check_equal_numpy(x, y):
     elif (isinstance(x, numpy.random.RandomState) and
           isinstance(y, numpy.random.RandomState)):
         return python_all(numpy.all(a == b) for a, b in
-                          izip(x.__getstate__(), y.__getstate__()))
+                          zip(x.__getstate__(), y.__getstate__()))
     else:
         return x == y
 
@@ -167,7 +167,7 @@ def as_tensor_variable(x, name=None, ndim=None):
                 # strip off leading broadcastable dimensions
                 first_non_broadcastable = [idx for idx in range(x.ndim)
                                            if not x.broadcastable[idx]][0]
-                x = x.dimshuffle(range(x.ndim)[first_non_broadcastable:])
+                x = x.dimshuffle(list(range(x.ndim))[first_non_broadcastable:])
                 if x.ndim > ndim:
                     raise ValueError(
                         'TensorType could not be cast to have %i dimensions'
@@ -353,7 +353,7 @@ def constant_or_value(x, rtype, name=None, ndim=None, dtype=None):
             x_ = autocast_int(x)
         elif rtype is TensorConstant and isinstance(x, float):
             x_ = autocast_float(x)
-        elif rtype is TensorConstant and isinstance(x, long):
+        elif rtype is TensorConstant and isinstance(x, int):
             # We need to address the case where a long number is used in a
             # Theano graph, because on Windows 64, all shapes are expressed
             # with longs.
@@ -753,7 +753,7 @@ def _multi(*fns):
             if names == 1:
                 return f()
             else:
-                return [f() for i in xrange(names[0])]
+                return [f() for i in range(names[0])]
         if isinstance(names, tuple):
             if len(names) == 1:
                 names = names[0]
@@ -1234,9 +1234,9 @@ class MaxAndArgmax(Op):
                     if axis[idx] < 0:
                         axis[idx] += x.type.ndim
                 axis.sort()
-                if axis == range(-x.type.ndim, 0, 1):
-                    axis = range(x.type.ndim)
-                assert axis == range(x.type.ndim), (
+                if axis == list(range(-x.type.ndim, 0, 1)):
+                    axis = list(range(x.type.ndim))
+                assert axis == list(range(x.type.ndim)), (
                     "MaxAndArgmax does not support multiple"
                     " axes. the max fct supports it.")
                 axis = None
@@ -1269,7 +1269,7 @@ class MaxAndArgmax(Op):
                     'input is: %s)' % (axis, x.type.ndim))
             all_axes.add(axis)
         else:
-            all_axes = range(x.ndim)
+            all_axes = list(range(x.ndim))
         if axis is None:
             axis = NoneConst.clone()
         else:
@@ -1415,7 +1415,7 @@ class MaxAndArgmax(Op):
         if g_max_disconnected:
             return [x.zeros_like(), axis_grad]
         if NoneConst.equals(axis):
-            axis_ = range(x.ndim)
+            axis_ = list(range(x.ndim))
         else:
             axis_ = axis
         xmax = max(x, axis_)
@@ -1456,7 +1456,7 @@ def makeKeepDims(x, y, axis):
     y = as_tensor_variable(y)
 
     if axis is None:
-        axis = range(x.type.ndim)
+        axis = list(range(x.type.ndim))
     elif isinstance(axis, (int, numpy.integer)):
         axis = [axis]
     elif isinstance(axis, numpy.ndarray) and axis.ndim == 0:
@@ -2137,7 +2137,7 @@ def nonzero(a, return_matrix=False):
         return matrix_result
     else:
         if a.ndim > 0:
-            tuple_result = tuple([matrix_result[i] for i in xrange(a.ndim)])
+            tuple_result = tuple([matrix_result[i] for i in range(a.ndim)])
         else:
             tuple_result = tuple([matrix_result[0]])
         return tuple_result
@@ -2232,7 +2232,7 @@ class Tri(gof.Op):
         return [out_shape]
 
     def grad(self, inp, grads):
-        return [grad_undefined(self, i, inp[i]) for i in xrange(3)]
+        return [grad_undefined(self, i, inp[i]) for i in range(3)]
 
     def __eq__(self, other):
         return type(self) == type(other) and self.dtype == other.dtype
@@ -2343,7 +2343,7 @@ class Eye(gof.Op):
         return [out_shape]
 
     def grad(self, inp, grads):
-        return [grad_undefined(self, i, inp[i]) for i in xrange(3)]
+        return [grad_undefined(self, i, inp[i]) for i in range(3)]
 
     def __eq__(self, other):
         return type(self) == type(other) and self.dtype == other.dtype
@@ -2505,7 +2505,7 @@ class Alloc(gof.Op):
         gz = grads[0]
         n_axes_to_sum = gz.ndim - x.ndim
         # The number of dimensions added
-        axis = range(n_axes_to_sum)
+        axis = list(range(n_axes_to_sum))
         # The broadcasted dimensions
         axis_broadcasted = []
         for i, (ib, gb) in enumerate(
@@ -2769,7 +2769,7 @@ def mean(input, axis=None, dtype=None, op=False, keepdims=False,
         shp = cast(shp, 'float64')
 
     if axis is None:
-        axis = range(input.ndim)
+        axis = list(range(input.ndim))
     elif isinstance(axis, (int, numpy.integer)):
         axis = [axis]
     elif isinstance(axis, numpy.ndarray) and axis.ndim == 0:
@@ -2805,7 +2805,7 @@ def var(input, axis=None, keepdims=False):
 
     input_ndim = input.type.ndim
     if axis is None:
-        axis = range(input_ndim)
+        axis = list(range(input_ndim))
     elif isinstance(axis, (int, numpy.integer)):
         axis = [axis]
     elif isinstance(axis, numpy.ndarray) and axis.ndim == 0:
@@ -3050,9 +3050,9 @@ def transpose(x, axes=None):
 
     """
     if axes is None:
-        axes = range((x.ndim - 1), -1, -1)
+        axes = list(range((x.ndim - 1), -1, -1))
     ret = DimShuffle(x.broadcastable, axes, inplace=False)(x)
-    if x.name and axes == range((x.ndim - 1), -1, -1):
+    if x.name and axes == list(range((x.ndim - 1), -1, -1)):
         ret.name = x.name + '.T'
     return ret
 
@@ -3188,7 +3188,7 @@ class Split(Op):
 #             x = unbroadcast(x, *range(x.type.ndim))
 
         inputs = [x, axis, splits]
-        outputs = [x.type() for i in xrange(self.len_splits)]
+        outputs = [x.type() for i in range(self.len_splits)]
 
         return Apply(self, inputs, outputs)
 
@@ -3222,7 +3222,7 @@ class Split(Op):
 
         general_key = [slice(None, None, None) for s in x.shape]
         lower_idx = 0
-        for i in xrange(self.len_splits):
+        for i in range(self.len_splits):
             upper_idx = lower_idx + splits[i]
             general_key[axis] = slice(lower_idx, upper_idx, None)
             outputs[i][0] = x.__getitem__(tuple(general_key)).copy()
@@ -3351,7 +3351,7 @@ def patternbroadcast(x, broadcastable):
         a theano tensor, which is unbroadcastable along the specified dimensions.
     """
     rval = Rebroadcast(*[(i, broadcastable[i])
-                         for i in xrange(len(broadcastable))])(x)
+                         for i in range(len(broadcastable))])(x)
     return theano.tensor.opt.apply_rebroadcast_opt(rval)
 
 
@@ -3568,7 +3568,7 @@ class Join(Op):
             assert len(shp) == n_dim
 
         out_shapes = []
-        for dim in xrange(n_dim):
+        for dim in range(n_dim):
             # we have to deal with 2 possible cases in here :
             #   a) we are dealing with the dimension for which we join
             #     (called t_side from true side of the if, where the if
@@ -3670,7 +3670,7 @@ def shape_padleft(t, n_ones=1):
     """
     _t = as_tensor_variable(t)
 
-    pattern = ['x'] * n_ones + [i for i in xrange(_t.type.ndim)]
+    pattern = ['x'] * n_ones + [i for i in range(_t.type.ndim)]
     return DimShuffle(_t.broadcastable, pattern)(_t)
 
 
@@ -3682,7 +3682,7 @@ def shape_padright(t, n_ones=1):
     """
     _t = as_tensor_variable(t)
 
-    pattern = [i for i in xrange(_t.type.ndim)] + ['x'] * n_ones
+    pattern = [i for i in range(_t.type.ndim)] + ['x'] * n_ones
     return DimShuffle(_t.broadcastable, pattern)(_t)
 
 
@@ -3707,14 +3707,13 @@ def stack(*tensors):
     # See ticket #660
     if numpy.all(
         [  # in case there is direct int in tensors.
-            isinstance(t, (numpy.number, float, int, python_complex,
-                           long)) or
+            isinstance(t, (numpy.number, float, int, python_complex)) or
             (isinstance(t, Variable) and
              isinstance(t.type, TensorType) and
              t.ndim == 0)
             for t in tensors]):
         # in case there is direct int
-        tensors = map(as_tensor_variable, tensors)
+        tensors = list(map(as_tensor_variable, tensors))
         dtype = scal.upcast(*[i.dtype for i in tensors])
         return theano.tensor.opt.MakeVector(dtype)(*tensors)
     return join(0, *[shape_padleft(t, 1) for t in tensors])
@@ -3849,7 +3848,7 @@ class Reshape(Op):
             shp_list = shp_orig
             if hasattr(shp_orig, "ndim") and shp_orig.ndim == 0:
                 shp_list = [shp_orig]
-            for index in xrange(self.ndim):
+            for index in range(self.ndim):
                 y = shp_list[index]
                 y = as_tensor_variable(y)
                 # Try to see if we can infer that y has a constant value of 1.
@@ -3936,7 +3935,7 @@ class Reshape(Op):
             return [requ]
         else:
             oshape = []
-            for i in xrange(self.ndim):
+            for i in range(self.ndim):
                 default_os_i = theano.tensor.opt.Shape_i(i)(node.outputs[0])
                 try:
                     os_i = get_scalar_constant_value(node.inputs[1][i]).item()
@@ -4272,7 +4271,7 @@ def tile(x, reps, ndim=None):
         iter(reps)
     except TypeError:
         raise ValueError("reps must be iterable")
-    if not numpy.all([isinstance(r, (int, long)) or
+    if not numpy.all([isinstance(r, int) or
         (isinstance(r, TensorVariable) and
             r.dtype in ["int8", "int16", "int32", "int64"]) for r in reps]):
         raise ValueError("elements of reps must be scalars of integer dtype")
@@ -4285,7 +4284,7 @@ def tile(x, reps, ndim=None):
     if ndim is None:
         ndim = len(reps)
     reps = list(reps)
-    shape = [x.shape[i] for i in xrange(ndim)]
+    shape = [x.shape[i] for i in range(ndim)]
     alloc_shape = reps + shape
     y = alloc(x, *alloc_shape)
     shuffle_ind = numpy.arange(ndim*2).reshape(2, ndim)
@@ -4316,7 +4315,7 @@ class ARange(Op):
         return self.__class__.__name__
 
     def make_node(self, start, stop, step):
-        start, stop, step = map(as_tensor_variable, (start, stop, step))
+        start, stop, step = list(map(as_tensor_variable, (start, stop, step)))
         assert start.ndim == 0
         assert stop.ndim == 0
         assert step.ndim == 0
@@ -4396,7 +4395,7 @@ def arange(start, stop=None, step=1, dtype=None):
     if stop is None:
         start, stop = 0, start
 
-    start, stop, step = map(as_tensor_variable, (start, stop, step))
+    start, stop, step = list(map(as_tensor_variable, (start, stop, step)))
     # If dtype is not provided, infer it from the other arguments
     if dtype is None:
         dtype = scal.upcast(start.type.dtype, stop.type.dtype, step.type.dtype)
@@ -4484,7 +4483,7 @@ class PermuteRowElements(Op):
 
         # Compute the broadcastable pattern of the output
         out_broadcastable = [xb and yb for xb, yb in
-                             izip(x.type.broadcastable, y.type.broadcastable)]
+                             zip(x.type.broadcastable, y.type.broadcastable)]
         out_type = tensor(dtype=x.type.dtype, broadcastable=out_broadcastable)
 
         inputlist = [x, y, inverse]
@@ -4526,17 +4525,17 @@ class PermuteRowElements(Op):
             xs0 = x.shape[0]
             ys0 = y.shape[0]
             if xs0 == ys0:
-                for i in xrange(xs0):
+                for i in range(xs0):
                     self._rec_perform(node, x[i], y[i], inverse, out[i],
                                       curdim + 1)
             elif ys0 == 1 and node.inputs[1].type.broadcastable[curdim]:
                 # Broadcast y
-                for i in xrange(xs0):
+                for i in range(xs0):
                     self._rec_perform(node, x[i], y[0], inverse, out[i],
                                       curdim + 1)
             elif xs0 == 1 and node.inputs[0].type.broadcastable[curdim]:
                 # Broadcast x
-                for i in xrange(ys0):
+                for i in range(ys0):
                     self._rec_perform(node, x[0], y[i], inverse, out[i],
                                       curdim + 1)
             else:
@@ -4551,7 +4550,7 @@ class PermuteRowElements(Op):
 
         # Make sure the output is big enough
         out_s = []
-        for xdim, ydim in izip(x_s, y_s):
+        for xdim, ydim in zip(x_s, y_s):
             if xdim == ydim:
                 outdim = xdim
             elif xdim == 1:
@@ -4587,7 +4586,7 @@ class PermuteRowElements(Op):
         # If x has been broadcasted along some axes, we need to sum
         # the gradient over these axes, but keep the dimension (as
         # broadcastable)
-        broadcasted_dims = [dim for dim in xrange(gz.type.ndim)
+        broadcasted_dims = [dim for dim in range(gz.type.ndim)
                             if x.type.broadcastable[dim]
                             and not gz.type.broadcastable[dim]]
         gx = Sum(axis=broadcasted_dims)(gx)
@@ -4596,7 +4595,7 @@ class PermuteRowElements(Op):
         # so we need to put them back.
         newdims = []
         i = 0
-        for dim in xrange(gz.type.ndim):
+        for dim in range(gz.type.ndim):
             if dim in broadcasted_dims:
                 newdims.append('x')
             else:
@@ -4674,7 +4673,7 @@ class Dot(Op):
     # graph.  See Dot22 in tensor.blas for details.
 
     def make_node(self, *inputs):
-        inputs = map(as_tensor_variable, inputs)
+        inputs = list(map(as_tensor_variable, inputs))
 
         if len(inputs) != 2:
             raise TypeError(
@@ -4800,7 +4799,7 @@ class Dot(Op):
             input_values = [iv0, iv1]
             eval_point_values = [ev0, ev1]
 
-            for i in xrange(2):
+            for i in range(2):
                 if eval_point_values[i] is not None and \
                    input_values[i].shape != eval_point_values[i].shape:
                     raise ValueError(
@@ -5076,10 +5075,10 @@ def tensordot(a, b, axes=2):
                              'equal to b.ndim (b.ndim=%i, max(axes[1])=%i).' %
                              (b.ndim, numpy.max(numpy.array(b_axes))))
 
-        a_order = (tuple(x for x in tuple(xrange(a.ndim)) if x not in a_axes)
+        a_order = (tuple(x for x in tuple(range(a.ndim)) if x not in a_axes)
                    + a_axes)
         b_order = (b_axes + tuple(x
-                                  for x in tuple(xrange(b.ndim))
+                                  for x in tuple(range(b.ndim))
                                   if x not in b_axes))
 
         a_shuffled = a.dimshuffle(a_order)
@@ -5148,10 +5147,14 @@ class Diagonal(Op):
         return Apply(self, [x], [tensor(dtype=x.dtype,
                                         broadcastable=[False] * (x.ndim - 1))])
 
-    def perform(self, node, (x,), (z,)):
+    def perform(self, node, xxx_todo_changeme, xxx_todo_changeme1):
+        (x,) = xxx_todo_changeme
+        (z,) = xxx_todo_changeme1
         z[0] = x.diagonal(self.offset, self.axis1, self.axis2)
 
-    def grad(self, (x,), (gz,)):
+    def grad(self, xxx_todo_changeme2, xxx_todo_changeme3):
+        (x,) = xxx_todo_changeme2
+        (gz,) = xxx_todo_changeme3
         return [grad_not_implemented(self, 0, x)]
 
     def infer_shape(self, node, shapes):
@@ -5196,10 +5199,12 @@ class Diag(Op):
 
         return Apply(self, [diag], [matrix(dtype=diag.dtype)])
 
-    def perform(self, node, inputs, (z,)):
+    def perform(self, node, inputs, xxx_todo_changeme4):
+        (z,) = xxx_todo_changeme4
         z[0] = numpy.diag(inputs[0])
 
-    def grad(self, inputs, (gz,)):
+    def grad(self, inputs, xxx_todo_changeme5):
+        (gz,) = xxx_todo_changeme5
         return [diagonal(gz)]
 
     def infer_shape(self, nodes, shapes):
@@ -5246,7 +5251,7 @@ def stacklists(arg):
     (2, 2, 4, 4)
     """
     if isinstance(arg, (tuple, list)):
-        return stack(*map(stacklists, arg))
+        return stack(*list(map(stacklists, arg)))
     else:
         return arg
 
@@ -5280,7 +5285,7 @@ def swapaxes(y, axis1, axis2):
     "swap axes of inputted tensor"
     y = as_tensor_variable(y)
     ndim = y.ndim
-    li = range(0, ndim)
+    li = list(range(0, ndim))
     li[axis1], li[axis2] = li[axis2], li[axis1]
     return y.dimshuffle(li)
 
@@ -5424,7 +5429,8 @@ class Choose(Op):
         o = TensorType(choice.dtype, bcast)
         return Apply(self, [a, choice], [o()])
 
-    def perform(self, node, inputs, (z, )):
+    def perform(self, node, inputs, xxx_todo_changeme6):
+        (z, ) = xxx_todo_changeme6
         a = inputs[0]
         choice = inputs[1]
         # TODO reuse out?

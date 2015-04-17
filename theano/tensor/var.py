@@ -67,7 +67,7 @@ class _tensor_py_operators:
         rval._is_nonzero = False
         return rval
 
-    def __nonzero__(self):
+    def __bool__(self):
         # This is meant to prohibit stuff like a < b < c, which is internally
         # implemented as (a < b) and (b < c). The trouble with this is the
         # side-effect that checking for a non-NULL a by typing "if a: ..."
@@ -429,7 +429,7 @@ class _tensor_py_operators:
 
     def __iter__(self):
         try:
-            for i in xrange(theano.tensor.basic.get_vector_length(self)):
+            for i in range(theano.tensor.basic.get_vector_length(self)):
                 yield self[i]
         except TypeError:
             # This prevents accidental iteration via builtin.sum(self)

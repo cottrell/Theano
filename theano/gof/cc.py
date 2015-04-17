@@ -6,7 +6,7 @@ Defines Linkers that deal with C implementations.
 from copy import copy
 import os
 import sys
-from itertools import izip
+
 
 import numpy
 
@@ -354,7 +354,7 @@ def get_c_extract(r, name, sub):
                 c_extract = r.type.c_extract(
                     name, sub, True,
                     check_broadcast=False)
-            except TypeError, e:
+            except TypeError as e:
                 c_extract = r.type.c_extract(name, sub, True)
     else:
         c_extract = r.type.c_extract(name, sub, False)
@@ -378,7 +378,7 @@ def get_c_extract_out(r, name, sub):
         try:
             c_extract = r.type.c_extract_out(name, sub, check_input,
                                              check_broadcast=False)
-        except TypeError, e:
+        except TypeError as e:
             c_extract = r.type.c_extract_out(name, sub, check_input)
 
     pre = """
@@ -707,7 +707,7 @@ class CLinker(link.Linker):
                 pass
             else:
                 # The following will be executed if the "try" block succeeds
-                assert isinstance(c_support_code_apply[-1], basestring), (
+                assert isinstance(c_support_code_apply[-1], str), (
                     str(node.op) +
                     " didn't return a string for c_support_code_apply")
 
@@ -716,13 +716,13 @@ class CLinker(link.Linker):
             except utils.MethodNotDefined:
                 pass
             else:
-                assert isinstance(c_init_code_apply[-1], basestring), (
+                assert isinstance(c_init_code_apply[-1], str), (
                     str(node.op) +
                     " didn't return a string for c_init_code_apply")
 
             try:
                 struct_init = op.c_init_code_struct(node, name, sub_struct)
-                assert isinstance(struct_init, basestring), (
+                assert isinstance(struct_init, str), (
                     str(node.op) +
                     " didn't return a string for c_init_code_struct")
             except utils.MethodNotDefined:
@@ -730,7 +730,7 @@ class CLinker(link.Linker):
 
             try:
                 struct_support = op.c_support_code_struct(node, name)
-                assert isinstance(struct_support, basestring), (
+                assert isinstance(struct_support, str), (
                     str(node.op) +
                     " didn't return a string for c_support_code_struct")
             except utils.MethodNotDefined:
@@ -738,7 +738,7 @@ class CLinker(link.Linker):
 
             try:
                 struct_cleanup = op.c_cleanup_code_struct(node, name)
-                assert isinstance(struct_cleanup, basestring), (
+                assert isinstance(struct_cleanup, str), (
                     str(node.op) +
                     " didn't return a string for c_cleanup_code_struct")
             except utils.MethodNotDefined:
@@ -749,7 +749,7 @@ class CLinker(link.Linker):
                 behavior = op.c_code(node, name, isyms, osyms, sub)
             except utils.MethodNotDefined:
                 raise NotImplementedError("%s cannot produce C code" % op)
-            assert isinstance(behavior, basestring), (
+            assert isinstance(behavior, str), (
                 str(node.op) + " didn't return a string for c_code")
             # To help understand what is following. It help read the c code.
             # This prevent different op that generate the same c code
@@ -802,10 +802,10 @@ class CLinker(link.Linker):
         self.c_init_code_apply = c_init_code_apply
 
         if (self.init_tasks, self.tasks) != self.get_init_tasks():
-            print >> sys.stderr, "init_tasks\n", self.init_tasks
-            print >> sys.stderr, self.get_init_tasks()[0]
-            print >> sys.stderr, "tasks\n", self.tasks
-            print >> sys.stderr, self.get_init_tasks()[1]
+            print("init_tasks\n", self.init_tasks, file=sys.stderr)
+            print(self.get_init_tasks()[0], file=sys.stderr)
+            print("tasks\n", self.tasks, file=sys.stderr)
+            print(self.get_init_tasks()[1], file=sys.stderr)
             assert (self.init_tasks, self.tasks) == self.get_init_tasks()
 
         # List of indices that should be ignored when passing the arguments
@@ -1014,9 +1014,9 @@ class CLinker(link.Linker):
                                     keep_lock=keep_lock)
         return (thunk,
                 [link.Container(input, storage) for input, storage in
-                 izip(self.fgraph.inputs, input_storage)],
+                 zip(self.fgraph.inputs, input_storage)],
                 [link.Container(output, storage, True) for output, storage in
-                 izip(self.fgraph.outputs, output_storage)],
+                 zip(self.fgraph.outputs, output_storage)],
                 error_storage)
 
     def get_init_tasks(self):
@@ -1351,7 +1351,7 @@ class CLinker(link.Linker):
                 lib_dirs=self.lib_dirs(),
                 libs=libs,
                 preargs=preargs)
-        except Exception, e:
+        except Exception as e:
             e.args += (str(self.fgraph),)
             raise
         finally:
@@ -1459,29 +1459,29 @@ class CLinker(link.Linker):
     def instantiate_code(self, n_args):
         code = StringIO()
         struct_name = self.struct_name
-        print >> code, "static PyObject * instantiate(PyObject * self, PyObject *argtuple) {"
-        print >> code, '  assert(PyTuple_Check(argtuple));'
-        print >> code, '  if (%(n_args)i != PyTuple_Size(argtuple)){ ' % locals()
-        print >> code, '     PyErr_Format(PyExc_TypeError, "Wrong number of arguments, expected %(n_args)i, got %%i", (int)PyTuple_Size(argtuple));' % locals()
-        print >> code, '     return NULL;'
-        print >> code, '  }'
-        print >> code, '  %(struct_name)s* struct_ptr = new %(struct_name)s();' % locals()
-        print >> code, '  if (struct_ptr->init(', ','.join('PyTuple_GET_ITEM(argtuple, %i)' % n for n in xrange(n_args)), ') != 0) {'
-        print >> code, '    delete struct_ptr;'
-        print >> code, '    return NULL;'
-        print >> code, '  }'
+        print("static PyObject * instantiate(PyObject * self, PyObject *argtuple) {", file=code)
+        print('  assert(PyTuple_Check(argtuple));', file=code)
+        print('  if (%(n_args)i != PyTuple_Size(argtuple)){ ' % locals(), file=code)
+        print('     PyErr_Format(PyExc_TypeError, "Wrong number of arguments, expected %(n_args)i, got %%i", (int)PyTuple_Size(argtuple));' % locals(), file=code)
+        print('     return NULL;', file=code)
+        print('  }', file=code)
+        print('  %(struct_name)s* struct_ptr = new %(struct_name)s();' % locals(), file=code)
+        print('  if (struct_ptr->init(', ','.join('PyTuple_GET_ITEM(argtuple, %i)' % n for n in range(n_args)), ') != 0) {', file=code)
+        print('    delete struct_ptr;', file=code)
+        print('    return NULL;', file=code)
+        print('  }', file=code)
         if PY3:
-            print >> code, """\
+            print("""\
     PyObject* thunk = PyCapsule_New((void*)(&{struct_name}_executor), NULL, {struct_name}_destructor);
     if (thunk != NULL && PyCapsule_SetContext(thunk, struct_ptr) != 0) {{
         PyErr_Clear();
         Py_DECREF(thunk);
         thunk = NULL;
     }}
-""".format(**locals())
+""".format(**locals()), file=code)
         else:
-            print >> code, '  PyObject* thunk = PyCObject_FromVoidPtrAndDesc((void*)(&%(struct_name)s_executor), struct_ptr, %(struct_name)s_destructor);' % locals()
-        print >> code, "  return thunk; }"
+            print('  PyObject* thunk = PyCObject_FromVoidPtrAndDesc((void*)(&%(struct_name)s_executor), struct_ptr, %(struct_name)s_destructor);' % locals(), file=code)
+        print("  return thunk; }", file=code)
         return code.getvalue()
 
 
@@ -1537,12 +1537,12 @@ class _CThunk(object):
                 exc_value = exc_type(_exc_value)
                 exc_value.__thunk_trace__ = trace
             except Exception:
-                print >> sys.stderr, ('ERROR retrieving error_storage.'
-                                      ' Was the error set in the c code?'),
-                print >> sys.stderr, self.error_storage
+                print(('ERROR retrieving error_storage.'
+                                      ' Was the error set in the c code?'), end=' ', file=sys.stderr)
+                print(self.error_storage, file=sys.stderr)
                 raise
 
-            raise exc_type, exc_value, exc_trace
+            raise exc_type(exc_value).with_traceback(exc_trace)
 
 
 class OpWiseCLinker(link.LocalLinker):
@@ -1653,7 +1653,7 @@ class OpWiseCLinker(link.LocalLinker):
                             node == last_user[input])])
 
             if no_recycling is True:
-                no_recycling = storage_map.values()
+                no_recycling = list(storage_map.values())
                 no_recycling = utils.difference(no_recycling, input_storage)
             else:
                 no_recycling = [storage_map[r]
@@ -1674,9 +1674,9 @@ class OpWiseCLinker(link.LocalLinker):
 
         return (f,
                 [link.Container(input, storage)
-                 for input, storage in izip(fgraph.inputs, input_storage)],
+                 for input, storage in zip(fgraph.inputs, input_storage)],
                 [link.Container(output, storage, True)
-                 for output, storage in izip(fgraph.outputs, output_storage)],
+                 for output, storage in zip(fgraph.outputs, output_storage)],
                 thunks,
                 order)
 
@@ -1754,23 +1754,23 @@ class DualLinker(link.Linker):
                                 no_recycling=no_recycling).make_all(**kwargs))
 
         def f():
-            for input1, input2 in izip(i1, i2):
+            for input1, input2 in zip(i1, i2):
                 # Set the inputs to be the same in both branches.
                 # The copy is necessary in order for inplace ops not to
                 # interfere.
                 input2.storage[0] = copy(input1.storage[0])
-            for thunk1, thunk2, node1, node2 in izip(thunks1, thunks2,
+            for thunk1, thunk2, node1, node2 in zip(thunks1, thunks2,
                                                      order1, order2):
-                for output, storage in izip(node1.outputs, thunk1.outputs):
+                for output, storage in zip(node1.outputs, thunk1.outputs):
                     if output in no_recycling:
                         storage[0] = None
-                for output, storage in izip(node2.outputs, thunk2.outputs):
+                for output, storage in zip(node2.outputs, thunk2.outputs):
                     if output in no_recycling:
                         storage[0] = None
                 try:
                     thunk1()
                     thunk2()
-                    for output1, output2 in izip(thunk1.outputs,
+                    for output1, output2 in zip(thunk1.outputs,
                                                  thunk2.outputs):
                         self.checker(output1, output2)
                 except Exception:

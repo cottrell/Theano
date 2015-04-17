@@ -54,7 +54,7 @@ nosetests.
 """
 
 
-import cPickle
+import pickle
 import datetime
 import os
 import subprocess
@@ -131,10 +131,10 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
         os.remove('.noseids')
 
     # Collect test IDs.
-    print """\
+    print("""\
 ####################
 # COLLECTING TESTS #
-####################"""
+####################""")
     stdout.flush()
     stderr.flush()
     dummy_in = open(os.devnull)
@@ -154,7 +154,7 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
     noseids_file = '.noseids'
 
     with open(noseids_file, 'rb') as f:
-        data = cPickle.load(f)
+        data = pickle.load(f)
 
     ids = data['ids']
     n_tests = len(ids)
@@ -165,20 +165,20 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
     # Standard batch testing is called for
     if not time_profile:
         failed = set()
-        print """\
+        print("""\
 ###################################
 # RUNNING TESTS IN BATCHES OF %s #
-###################################""" % batch_size
+###################################""" % batch_size)
         # When `display_batch_output` is False, we suppress all output because
         # we want the user to focus only on the failed tests, which are re-run
         # (with output) below.
         dummy_out = open(os.devnull, 'w')
-        for test_id in xrange(1, n_tests + 1, batch_size):
+        for test_id in range(1, n_tests + 1, batch_size):
             stdout.flush()
             stderr.flush()
-            test_range = range(test_id, min(test_id + batch_size, n_tests + 1))
+            test_range = list(range(test_id, min(test_id + batch_size, n_tests + 1)))
             cmd = ([python, theano_nose, '--with-id'] +
-                   map(str, test_range) +
+                   list(map(str, test_range)) +
                    argv)
             subprocess_extra_args = dict(stdin=dummy_in.fileno())
             if not display_batch_output:
@@ -197,18 +197,18 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
             # seems like it is not systematically erased though, and we want
             # to avoid duplicates.
             with open(noseids_file, 'rb') as f:
-                failed = failed.union(cPickle.load(f)['failed'])
+                failed = failed.union(pickle.load(f)['failed'])
 
-            print '%s%% done in %.3fs (failed: %s)' % (
-                (test_range[-1] * 100) // n_tests, t1 - t0, len(failed))
+            print('%s%% done in %.3fs (failed: %s)' % (
+                (test_range[-1] * 100) // n_tests, t1 - t0, len(failed)))
         # Sort for cosmetic purpose only.
         failed = sorted(failed)
         if failed:
             # Re-run only failed tests
-            print """\
+            print("""\
 ################################
 # RE-RUNNING FAILED TESTS ONLY #
-################################"""
+################################""")
             stdout.flush()
             stderr.flush()
             subprocess.call(
@@ -222,17 +222,17 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
             stderr.flush()
             return 0
         else:
-            print """\
+            print("""\
 ####################
 # ALL TESTS PASSED #
-####################"""
+####################""")
 
     # Time-profiling is called for
     else:
-        print """\
+        print("""\
 ########################################
 # RUNNING TESTS IN TIME-PROFILING MODE #
-########################################"""
+########################################""")
 
         # finds first word of list l containing string s
         def getIndexOfFirst(l, s):
@@ -266,8 +266,8 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
         f_nosort.write('TIME-PROFILING OF THEANO\'S NOSETESTS'
                        ' (by sequential id)\n\n' + stamp + fields)
         f_nosort.flush()
-        for test_floor in xrange(1, n_tests + 1, batch_size):
-            for test_id in xrange(test_floor, min(test_floor + batch_size,
+        for test_floor in range(1, n_tests + 1, batch_size):
+            for test_id in range(test_floor, min(test_floor + batch_size,
                                                  n_tests + 1)):
                 # Print the test we will start in the raw log to help
                 # debug tests that are too long.
@@ -335,7 +335,7 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
                 f_nosort.write(s_nosort)
                 f_nosort.flush()
 
-            print '%s%% time-profiled' % ((test_id * 100) // n_tests)
+            print('%s%% time-profiled' % ((test_id * 100) // n_tests))
         f_rawlog.close()
 
         # sorting tests according to running-time
@@ -347,7 +347,7 @@ def run(stdout, stderr, argv, theano_nose, batch_size, time_profile,
         f_sort = open(path_sort, 'w')
         f_sort.write('TIME-PROFILING OF THEANO\'S NOSETESTS'
                      ' (sorted by computation time)\n\n' + stamp + fields)
-        for i in xrange(len(prof_master_nosort)):
+        for i in range(len(prof_master_nosort)):
             s_sort = ((str(prof_master_sort[i][0]) + 's').ljust(10) +
                  " " + prof_master_sort[i][1].ljust(7) + " " +
                  prof_master_sort[i][2] + prof_master_sort[i][3] +

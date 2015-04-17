@@ -173,7 +173,7 @@ def test_careduce():
             f_caused_value_error = False
             try:
                 f_out = f(val)
-            except ValueError, e:
+            except ValueError as e:
                 exc = e
                 f_caused_value_error = True
             except NotImplementedError:
@@ -185,23 +185,23 @@ def test_careduce():
             f2_caused_value_error = False
             try:
                 f2_out = f2(val)
-            except ValueError, e:
+            except ValueError as e:
                 exc2 = e
                 f2_caused_value_error = True
 
             if f_caused_value_error != f2_caused_value_error:
                 if f_caused_value_error:
-                    print 'f caused this value error:'
-                    print exc
+                    print('f caused this value error:')
+                    print(exc)
                 else:
-                    print 'f did not raise a value error, but should have'
+                    print('f did not raise a value error, but should have')
                 if f2_caused_value_error:
-                    print 'f2 caused this value error:'
-                    print exc2
+                    print('f2 caused this value error:')
+                    print(exc2)
                 else:
-                    print 'f should not have raised a value error'
-                print 'shape was: ', shape
-                print 'pattern was: ', pattern
+                    print('f should not have raised a value error')
+                print('shape was: ', shape)
+                print('pattern was: ', pattern)
                 assert False
 
             try:
@@ -230,7 +230,7 @@ def test_careduce():
             pat = tensor_pattern_to_gpu_pattern(shape, pattern)
 
             a = tensor.TensorType('float32', (False,) * len(shape))()
-            dim_pattern = range(len(shape))
+            dim_pattern = list(range(len(shape)))
             dim_pattern[0] = 1
             dim_pattern[1] = 0
             a = a.dimshuffle(dim_pattern)
@@ -418,7 +418,7 @@ def test_elemwise0():
     f = pfunc([b], [], updates=[(a, a + b)], mode=mode_with_gpu)
 
     # check that we work inplace.
-    assert f.maker.fgraph.toposort()[1].op.destroy_map.items() == [(0, [0])]
+    assert list(f.maker.fgraph.toposort()[1].op.destroy_map.items()) == [(0, [0])]
 
     a0 = a.get_value() * 1.0
     f(numpy.ones((4, 4), dtype='float32'))
@@ -1019,11 +1019,11 @@ class T_subtensor(theano.tensor.tests.test_subtensor.T_subtensor):
         # The variable fast is used to set the member perform_using_take of
         # the Op.  It is only useful for testing that we use the fast
         # version when we should. Users should not use it.
-        for shape, idx, fast in [((70000,), range(70000), True),
-                                 ((70000, 5), range(70000), True),
+        for shape, idx, fast in [((70000,), list(range(70000)), True),
+                                 ((70000, 5), list(range(70000)), True),
                                  ((70000, 5),  numpy.zeros((0,), 'int64'),
                                   True),
-                                 ((70000, 2, 3), range(70000), True),
+                                 ((70000, 2, 3), list(range(70000)), True),
                                  ((1025, 1025), [5, 10], True),
                                  ((3, 1025, 1026), [1, 2], True),
                                  ((1025, 67000), [5, 10], True),
@@ -1148,11 +1148,11 @@ def test_many_arg_elemwise():
             for nb_dim in [2, 3, 4, 5]:
                 shapes = [rng.randint(1, 5) for i in range(nb_dim)]
                 args = [numpy.cast['float32'](rng.randn(*shapes))
-                        for arg in xrange(0, num_args)]
+                        for arg in range(0, num_args)]
 
                 symb_args = [theano.tensor.TensorType('float32',
                                                       (False,)*nb_dim)()
-                             for arg in xrange(0, num_args)]
+                             for arg in range(0, num_args)]
 
                 outputs = []
                 for mode in [mode_with_gpu, mode_without_gpu]:
@@ -1319,7 +1319,7 @@ def speed_adv_sub1():
         f = theano.function([vec], var[vec], mode=mode_with_gpu)
         for i in range(100):
             f(idx)
-        print "ProfileMode with batch size", batch_size
+        print("ProfileMode with batch size", batch_size)
         mode_with_gpu.print_summary()
 
 

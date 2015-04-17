@@ -9,15 +9,15 @@ import theano.sandbox.cuda as tcn
 
 def compare_fns(fns, input, reps=10):
     times = {}
-    for implname, impl in fns.iteritems():
+    for implname, impl in fns.items():
         try:
-            print 'TOPOSORT', implname
+            print('TOPOSORT', implname)
             for i, n in enumerate(impl.maker.fgraph.toposort()):
-                print i, n
+                print(i, n)
         except Exception:
             pass
         t0 = time.time()
-        for i in xrange(reps):
+        for i in range(reps):
             impl(input)
         dt = time.time() - t0
         times[implname] = dt
@@ -25,8 +25,8 @@ def compare_fns(fns, input, reps=10):
 
 
 def showtimes(times):
-    for impl, dt in times.iteritems():
-        print impl, dt
+    for impl, dt in times.items():
+        print(impl, dt)
 
 
 def cmp_sigmoids(shape):

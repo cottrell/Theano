@@ -42,7 +42,9 @@ class MatrixPinv(Op):
         assert x.ndim == 2
         return Apply(self, [x], [x.type()])
 
-    def perform(self, node, (x,), (z, )):
+    def perform(self, node, xxx_todo_changeme, xxx_todo_changeme1):
+        (x,) = xxx_todo_changeme
+        (z, ) = xxx_todo_changeme1
         z[0] = numpy.linalg.pinv(x).astype(x.dtype)
 
 pinv = MatrixPinv()
@@ -69,7 +71,9 @@ class MatrixInverse(Op):
         assert x.ndim == 2
         return Apply(self, [x], [x.type()])
 
-    def perform(self, node, (x,), (z, )):
+    def perform(self, node, xxx_todo_changeme2, xxx_todo_changeme3):
+        (x,) = xxx_todo_changeme2
+        (z, ) = xxx_todo_changeme3
         z[0] = numpy.linalg.inv(x).astype(x.dtype)
 
     def grad(self, inputs, g_outputs):
@@ -149,7 +153,9 @@ class AllocDiag(Op):
     def grad(self, inputs, g_outputs):
         return [extract_diag(g_outputs[0])]
 
-    def perform(self, node, (x,), (z,)):
+    def perform(self, node, xxx_todo_changeme4, xxx_todo_changeme5):
+        (x,) = xxx_todo_changeme4
+        (z,) = xxx_todo_changeme5
         if x.ndim != 1:
             raise TypeError(x)
         z[0] = numpy.diag(x)
@@ -264,11 +270,13 @@ class Det(Op):
         o = theano.tensor.scalar(dtype=x.dtype)
         return Apply(self, [x], [o])
 
-    def perform(self, node, (x,), (z, )):
+    def perform(self, node, xxx_todo_changeme6, xxx_todo_changeme7):
+        (x,) = xxx_todo_changeme6
+        (z, ) = xxx_todo_changeme7
         try:
             z[0] = numpy.asarray(numpy.linalg.det(x), dtype=x.dtype)
         except Exception:
-            print 'Failed to compute determinant', x
+            print('Failed to compute determinant', x)
             raise
 
     def grad(self, inputs, g_outputs):
@@ -298,7 +306,9 @@ class Eig(Op):
         v = theano.tensor.matrix(dtype=x.dtype)
         return Apply(self, [x], [w, v])
 
-    def perform(self, node, (x,), (w, v)):
+    def perform(self, node, xxx_todo_changeme8, xxx_todo_changeme9):
+        (x,) = xxx_todo_changeme8
+        (w, v) = xxx_todo_changeme9
         w[0], v[0] = [z.astype(x.dtype) for z in self._numop(x)]
 
     def infer_shape(self, node, shapes):
@@ -333,7 +343,9 @@ class Eigh(Eig):
         v = theano.tensor.matrix(dtype=x.dtype)
         return Apply(self, [x], [w, v])
 
-    def perform(self, node, (x,), (w, v)):
+    def perform(self, node, xxx_todo_changeme10, xxx_todo_changeme11):
+        (x,) = xxx_todo_changeme10
+        (w, v) = xxx_todo_changeme11
         w[0], v[0] = self._numop(x, self.UPLO)
 
     def grad(self, inputs, g_outputs):
@@ -393,7 +405,7 @@ class EighGrad(Op):
             self.tri1 = lambda a: numpy.tril(a, -1)
 
     def make_node(self, x, w, v, gw, gv):
-        x, w, v, gw, gv = map(as_tensor_variable, (x, w, v, gw, gv))
+        x, w, v, gw, gv = list(map(as_tensor_variable, (x, w, v, gw, gv)))
         assert x.ndim == 2
         assert w.ndim == 1
         assert v.ndim == 2
@@ -414,9 +426,9 @@ class EighGrad(Op):
         outer = numpy.outer
 
         G = lambda n: sum(v[:, m] * V.T[n].dot(v[:, m]) / (w[n] - w[m])
-                          for m in xrange(N) if m != n)
+                          for m in range(N) if m != n)
         g = sum(outer(v[:, n], v[:, n] * W[n] + G(n))
-                for n in xrange(N))
+                for n in range(N))
 
         # Numpy's eigh(a, 'L') (eigh(a, 'U')) is a function of tril(a)
         # (triu(a)) only.  This means that partial derivative of
@@ -462,7 +474,9 @@ class QRFull(Op):
         r = theano.tensor.matrix(dtype=x.dtype)
         return Apply(self, [x], [q, r])
 
-    def perform(self, node, (x,), (q, r)):
+    def perform(self, node, xxx_todo_changeme12, xxx_todo_changeme13):
+        (x,) = xxx_todo_changeme12
+        (q, r) = xxx_todo_changeme13
         assert x.ndim == 2, "The input of qr function should be a matrix."
 
         q[0], r[0] = self._numop(x,
@@ -487,7 +501,9 @@ class QRIncomplete(Op):
         q = theano.tensor.matrix(dtype=x.dtype)
         return Apply(self, [x], [q])
 
-    def perform(self, node, (x,), (q,)):
+    def perform(self, node, xxx_todo_changeme14, xxx_todo_changeme15):
+        (x,) = xxx_todo_changeme14
+        (q,) = xxx_todo_changeme15
         assert x.ndim == 2, "The input of qr function should be a matrix."
         q[0] = self._numop(x,
                            self.mode)
@@ -592,7 +608,9 @@ class SVD(Op):
         v = theano.tensor.matrix(dtype=x.dtype)
         return Apply(self, [x], [w, u, v])
 
-    def perform(self, node, (x,), (w, u, v)):
+    def perform(self, node, xxx_todo_changeme16, xxx_todo_changeme17):
+        (x,) = xxx_todo_changeme16
+        (w, u, v) = xxx_todo_changeme17
         assert x.ndim == 2, "The input of svd function should be a matrix."
         w[0], u[0], v[0] = self._numop(x,
                                        self.full_matrices,
@@ -660,7 +678,7 @@ class lstsq(Op):
 
 def matrix_power(M, n):
     result = 1
-    for i in xrange(n):
+    for i in range(n):
         result = theano.dot(result, M)
     return result
 

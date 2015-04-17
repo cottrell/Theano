@@ -67,14 +67,14 @@ class Kernel(object):
     @staticmethod
     def get_flags(*types):
         def get_dtype(t):
-            if isinstance(t, (str, unicode)):
+            if isinstance(t, str):
                 return numpy.dtype(t)
             elif isinstance(t, Type):
                 return t.dtype
             elif isinstance(t, Variable):
                 return t.type.dtype
             else:
-                raise TypeError, "can't get a dtype from %s" % (type(t),)
+                raise TypeError("can't get a dtype from %s" % (type(t),))
         dtypes = [get_dtype(t) for t in types]
         flags = dict(cluda=True)
         if any(d == numpy.float64 for d in dtypes):
@@ -117,7 +117,7 @@ class GpuKernelBase(object):
         iterable of Kernel objects that describe the kernels this op
         will need.
         """
-        raise MethodNotDefined, 'gpu_kernels'
+        raise MethodNotDefined('gpu_kernels')
 
     def c_headers(self):
         try:
@@ -712,7 +712,7 @@ class GpuAlloc(HideC, Alloc):
                       theano.sandbox.gpuarray.subtensor.GpuAdvancedIncSubtensor1_dev20,
                       theano.sandbox.gpuarray.blas.GpuGemm,
                       theano.sandbox.gpuarray.blas.GpuGemv,
-                      theano.sandbox.gpuarray.blas.GpuGer,
+                      theano.sandbox.gpuarray.blas.GpuGer
                   ))):
                 return False
             # If the clients is a transfer, we don't want to fold. We
@@ -770,7 +770,7 @@ class GpuContiguous(Op):
                 Py_INCREF(%(z)s);
 
             } else if ((NULL == %(z)s)""" % locals()
-        for i in xrange(len(node.inputs[0].type.broadcastable)):
+        for i in range(len(node.inputs[0].type.broadcastable)):
             str += "\n|| (PyGpuArray_DIMS(%(input)s)[%(i)s] != PyGpuArray_DIMS(%(z)s)[%(i)s])" % locals()
         str += """
                 || !GpuArray_IS_C_CONTIGUOUS(&(%(z)s->ga)))
@@ -835,8 +835,8 @@ class GpuJoin(HideC, Join):
     def make_node(self, axis, *tensors):
         node = Join.make_node(self, axis, *tensors)
 
-        return Apply(self, [node.inputs[0]] + map(as_gpuarray_variable,
-                                                  tensors),
+        return Apply(self, [node.inputs[0]] + list(map(as_gpuarray_variable,
+                                                  tensors)),
                      [GpuArrayType(broadcastable=node.outputs[0].broadcastable,
                                    dtype=node.outputs[0].dtype)()])
 
@@ -914,7 +914,7 @@ class GpuEye(GpuKernelBase, Op):
 
     def grad(self, inp, grads):
         return [grad_undefined(self, i, inp[i])
-                for i in xrange(3)]
+                for i in range(3)]
 
     def __eq__(self, other):
         return type(self) == type(other) and self.dtype == other.dtype

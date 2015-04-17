@@ -390,7 +390,7 @@ def scan(fn,
 
     return_steps = OrderedDict()
     # wrap sequences in a dictionary if they are not already dictionaries
-    for i in xrange(n_seqs):
+    for i in range(n_seqs):
         if not isinstance(seqs[i], dict):
             seqs[i] = OrderedDict([('input', seqs[i]), ('taps', [0])])
         elif seqs[i].get('taps', None) is not None:
@@ -400,7 +400,7 @@ def scan(fn,
             seqs[i]['taps'] = [0]
 
     # wrap outputs info in a dictionary if they are not already in one
-    for i in xrange(n_outs):
+    for i in range(n_outs):
         if outs_info[i] is not None:
             if isinstance(outs_info[i], dict):
                 # DEPRECATED :
@@ -480,7 +480,7 @@ def scan(fn,
                     try:
                         nw_slice.tag.test_value = gof.Op._get_test_value(
                             _seq_val_slice)
-                    except AttributeError, e:
+                    except AttributeError as e:
                         if config.compute_test_value != 'ignore':
                             # No need to print a warning or raise an error now,
                             # it will be done when fn will be called.
@@ -612,7 +612,7 @@ def scan(fn,
             if config.compute_test_value != 'off':
                 try:
                     arg.tag.test_value = gof.Op._get_test_value(actual_arg)
-                except AttributeError, e:
+                except AttributeError as e:
                     if config.compute_test_value != 'ignore':
                         # No need to print a warning or raise an error now,
                         # it will be done when fn will be called.
@@ -672,7 +672,7 @@ def scan(fn,
                     try:
                         nw_slice.tag.test_value = gof.Op._get_test_value(
                             _init_out_var_slice)
-                    except AttributeError, e:
+                    except AttributeError as e:
                         if config.compute_test_value != 'ignore':
                             # No need to print a warning or raise an error now,
                             # it will be done when fn will be called.
@@ -700,9 +700,9 @@ def scan(fn,
     max_mit_sot = numpy.max([-1] + mit_sot_rightOrder) + 1
     max_sit_sot = numpy.max([-1] + sit_sot_rightOrder) + 1
     n_elems = numpy.max([max_mit_sot, max_sit_sot])
-    _ordered_args = [[] for x in xrange(n_elems)]
+    _ordered_args = [[] for x in range(n_elems)]
     offset = 0
-    for idx in xrange(n_mit_sot):
+    for idx in range(n_mit_sot):
         n_inputs = len(mit_sot_tap_array[idx])
         if n_fixed_steps in [1, -1]:
             _ordered_args[mit_sot_rightOrder[idx]] = \
@@ -712,7 +712,7 @@ def scan(fn,
                             mit_sot_inner_inputs[offset:offset + n_inputs]
         offset += n_inputs
 
-    for idx in xrange(n_sit_sot):
+    for idx in range(n_sit_sot):
         if n_fixed_steps in [1, -1]:
             _ordered_args[sit_sot_rightOrder[idx]] = \
                                         [sit_sot_inner_slices[idx]]
@@ -791,9 +791,9 @@ def scan(fn,
     # as non sequences at the end of our args
     fake_nonseqs = [x.type() for x in non_seqs]
     fake_outputs = scan_utils.clone(outputs,
-                                    replace=OrderedDict(zip(non_seqs,
-                                                     fake_nonseqs)))
-    all_inputs = itertools.ifilter(
+                                    replace=OrderedDict(list(zip(non_seqs,
+                                                     fake_nonseqs))))
+    all_inputs = filter(
         lambda x: (isinstance(x, gof.Variable) and
                    not isinstance(x, SharedVariable) and
                    not isinstance(x, gof.Constant)),
@@ -838,7 +838,7 @@ def scan(fn,
         n_outs = len(dummy_f.maker.outputs)
         if as_while:
             n_outs = n_outs - 1
-        outs_info = [OrderedDict() for x in xrange(n_outs)]
+        outs_info = [OrderedDict() for x in range(n_outs)]
 
     # Step 5.1 Outputs with taps different then -1
 
@@ -915,7 +915,7 @@ def scan(fn,
                          if (not isinstance(arg, SharedVariable) and
                              not isinstance(arg, tensor.Constant))]
 
-    givens.update(OrderedDict(zip(other_scan_args, other_inner_args)))
+    givens.update(OrderedDict(list(zip(other_scan_args, other_inner_args))))
 
     if strict:
         non_seqs_set = set(non_sequences if non_sequences != None else [])
@@ -939,8 +939,8 @@ def scan(fn,
                             in dummy_f.maker.expanded_inputs
                             if (isinstance(arg.variable, SharedVariable) and
                                 not arg.update)]
-    givens.update(OrderedDict(zip(other_shared_scan_args,
-                           other_shared_inner_args)))
+    givens.update(OrderedDict(list(zip(other_shared_scan_args,
+                           other_shared_inner_args))))
 
     ##
     # Step 6. Re-order the outputs and clone them replacing things
@@ -973,7 +973,7 @@ def scan(fn,
         # variables are put on GPU right aways >:| ,
         new_givens = OrderedDict()
 
-        for w, w_copy in givens.iteritems():
+        for w, w_copy in givens.items():
             if (isinstance(w.type, cuda.CudaNdarrayType)
                 and isinstance(w_copy.type, tensor.TensorType)):
                 for o in inner_outs:
@@ -989,7 +989,7 @@ def scan(fn,
     # Step 7. Create the Scan Op
     ##
 
-    tap_array = mit_sot_tap_array + [[-1] for x in xrange(n_sit_sot)]
+    tap_array = mit_sot_tap_array + [[-1] for x in range(n_sit_sot)]
     if allow_gc is None:
         allow_gc = config.scan.allow_gc
     info = OrderedDict()
@@ -1026,7 +1026,7 @@ def scan(fn,
                     mit_sot_scan_inputs +
                     sit_sot_scan_inputs +
                     shared_scan_inputs +
-                    [actual_n_steps for x in xrange(n_nit_sot)] +
+                    [actual_n_steps for x in range(n_nit_sot)] +
                     other_shared_scan_args +
                     other_scan_args)
 
@@ -1072,7 +1072,7 @@ def scan(fn,
         offsets)
 
     offset += n_mit_sot
-    offsets = [1 for x in xrange(n_sit_sot)]
+    offsets = [1 for x in range(n_sit_sot)]
     sit_sot_outs = remove_dimensions(
         scan_outs[offset:offset + n_sit_sot],
         sit_sot_return_steps,

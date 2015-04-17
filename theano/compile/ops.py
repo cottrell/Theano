@@ -4,7 +4,7 @@ and Ops building class (:class:`FromFunctionOp`) and decorator
 
 """
 import copy
-import cPickle
+import pickle
 import warnings
 
 import theano
@@ -12,6 +12,7 @@ from theano import gof
 
 
 import numpy
+import collections
 
 
 def register_view_op_c_code(type, code, version=()):
@@ -71,7 +72,7 @@ class ViewOp(gof.Op):
         version = []
         # If any of the c code is unversionned, we have to return ()
         # Else, we will return a list of (type name, version) pairs.
-        for t, (c, v) in sorted(self.c_code_and_version.items(), key=lambda pair: str(pair[0])):
+        for t, (c, v) in sorted(list(self.c_code_and_version.items()), key=lambda pair: str(pair[0])):
             if not v:
                 warnings.warn("Type %s has C code for ViewOp, but it has "
                         "no version. You should add a 'version' keyword arg "
@@ -165,7 +166,7 @@ class DeepCopyOp(gof.Op):
         version = []
         # If any of the c code is unversionned, we have to return ()
         # Else, we will return a list of (type name, version) pairs.
-        for t, (c, v) in sorted(self.c_code_and_version.items(), key=lambda pair: str(pair[0])):
+        for t, (c, v) in sorted(list(self.c_code_and_version.items()), key=lambda pair: str(pair[0])):
             if not v:
                 warnings.warn("Type %s has C code for DeepCopyOp, but it has "
                         "no version. You should add a 'version' keyword arg "
@@ -282,7 +283,7 @@ class Shape(gof.Op):
         version = []
         # If any of the c code is unversionned, we have to return ()
         # Else, we will return a list of (type name, version) pairs.
-        for t, (c, v) in sorted(self.c_code_and_version.items(), key=lambda pair: str(pair[0])):
+        for t, (c, v) in sorted(list(self.c_code_and_version.items()), key=lambda pair: str(pair[0])):
             if not v:
                 warnings.warn("Type %s has C code for Shape, but it has "
                         "no version. You should add a 'version' keyword arg "
@@ -352,7 +353,7 @@ class Shape_i(gof.Op):
         version = []
         # If any of the c code is unversionned, we have to return ()
         # Else, we will return a list of (type name, version) pairs.
-        for t, (c, ci, v) in sorted(self.c_code_and_version.items(),
+        for t, (c, ci, v) in sorted(list(self.c_code_and_version.items()),
                                     key=lambda pair: str(pair[0])):
             if not v:
                 warnings.warn("Type %s has C code for Shape_i, but it has "
@@ -504,12 +505,12 @@ class FromFunctionOp(gof.Op):
         try:
             obj = load_back(mod, name)
         except (ImportError, KeyError, AttributeError):
-            raise cPickle.PicklingError(
+            raise pickle.PicklingError(
                 "Can't pickle as_op(), not found as %s.%s" %
                 (mod, name))
         else:
             if obj is not self:
-                raise cPickle.PicklingError(
+                raise pickle.PicklingError(
                     "Can't pickle as_op(), not the object "
                     "at %s.%s" % (mod, name))
         return load_back, (mod, name)
@@ -557,7 +558,7 @@ def as_op(itypes, otypes, infer_shape=None):
     itypes = list(itypes)
     otypes = list(otypes)
 
-    if infer_shape is not None and not callable(infer_shape):
+    if infer_shape is not None and not isinstance(infer_shape, collections.Callable):
         raise TypeError("infer_shape needs to be a callable")
 
     def make_op(fn):
@@ -607,7 +608,7 @@ class Rebroadcast(gof.Op):
 
     def __init__(self, *axis):
         self.axis = dict(axis)
-        for axis, broad in self.axis.iteritems():
+        for axis, broad in self.axis.items():
             assert isinstance(axis, (numpy.integer, int)), (
                 "Rebroadcast needs integer axes. Got ", axis)
 
@@ -615,7 +616,7 @@ class Rebroadcast(gof.Op):
         return type(self) == type(other) and self.axis == other.axis
 
     def __hash__(self):
-        items = sorted(self.axis.iteritems())  # no ambiguity because each item key is unique
+        items = sorted(self.axis.items())  # no ambiguity because each item key is unique
         return hash((type(self), tuple(items)))
 
     def __str__(self):
@@ -623,14 +624,14 @@ class Rebroadcast(gof.Op):
             broadcast_pattern = []
         else:
             broadcast_pattern = ['?' for i
-                                 in xrange(1 + numpy.max(self.axis.keys()))]
-        for k, v in self.axis.iteritems():
+                                 in range(1 + numpy.max(list(self.axis.keys())))]
+        for k, v in self.axis.items():
             broadcast_pattern[k] = str(int(v))
         return '%s{%s}' % (self.__class__.__name__,
                            ','.join(broadcast_pattern))
 
     def make_node(self, x):
-        if self.axis.keys() and (x.ndim <= numpy.max(self.axis.keys())):
+        if list(self.axis.keys()) and (x.ndim <= numpy.max(list(self.axis.keys()))):
             raise ValueError('Trying to rebroadcast non-existent dimension')
         t = x.type.clone(broadcastable=[self.axis.get(i, b)
                                         for i, b in enumerate(
@@ -640,7 +641,7 @@ class Rebroadcast(gof.Op):
     def perform(self, node, inp, out_):
         x, = inp
         out, = out_
-        for axis, value in self.axis.iteritems():
+        for axis, value in self.axis.items():
             if value and x.shape[axis] != 1:
                 raise ValueError('Dimension %s in Rebroadcast\'s input was'
                                  ' supposed to be 1 (got %s instead)' %
@@ -652,13 +653,13 @@ class Rebroadcast(gof.Op):
         gz, = grads
         # restore the broadcasting pattern of the input
         return Rebroadcast(*[(axis, x.type.broadcastable[axis])
-                             for axis, value in self.axis.iteritems()])(gz),
+                             for axis, value in self.axis.items()])(gz),
 
     def infer_shape(self, node, ishapes):
         assert len(ishapes) == 1
         l = []
         one = theano.tensor.basic.constant(1)
-        for ax in xrange(len(ishapes[0])):
+        for ax in range(len(ishapes[0])):
             if self.axis.get(ax, False):
                 l.append(one)
             else:
@@ -680,7 +681,7 @@ class Rebroadcast(gof.Op):
         if itype in self.c_code_and_version:
             code, version = self.c_code_and_version[itype]
             final_code = ""
-            for axis, value in self.axis.iteritems():
+            for axis, value in self.axis.items():
                 if value:
                     final_code += code % locals()
             return final_code + """
@@ -694,7 +695,7 @@ class Rebroadcast(gof.Op):
         version = []
         # If any of the c code is unversionned, we have to return ()
         # Else, we will return a list of (type name, version) pairs.
-        for t, (c, v) in sorted(self.c_code_and_version.items(),
+        for t, (c, v) in sorted(list(self.c_code_and_version.items()),
                                 key=lambda pair: str(pair[0])):
             if not v:
                 warnings.warn("Type %s has C code for Rebroadcast, but it has "
@@ -777,7 +778,7 @@ class SpecifyShape(gof.Op):
     def infer_shape(self, node, shapes):
         xshape, sshape = shapes
         new_shape = []
-        for dim in xrange(node.inputs[0].ndim):
+        for dim in range(node.inputs[0].ndim):
             try:
                 s = theano.tensor.get_scalar_constant_value(node.inputs[1][dim])
                 s = theano.tensor.as_tensor_variable(s)
@@ -833,7 +834,7 @@ class SpecifyShape(gof.Op):
         version = []
         # If any of the c code is unversionned, we have to return ()
         # Else, we will return a list of (type name, version) pairs.
-        for t, (c, v, _) in sorted(self.c_code_and_version.items(),
+        for t, (c, v, _) in sorted(list(self.c_code_and_version.items()),
                                 key=lambda pair: str(pair[0])):
             if not v:
                 warnings.warn("Type %s has C code for SpecifyShape, but it has "

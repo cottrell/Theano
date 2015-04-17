@@ -112,7 +112,7 @@ def dct_matrix(rows, cols, unitary=True):
     rval = numpy.zeros((rows, cols))
     col_range = numpy.arange(cols)
     scale = numpy.sqrt(2.0/cols)
-    for i in xrange(rows):
+    for i in range(rows):
         rval[i] = numpy.cos(i * (col_range*2+1)/(2.0 * cols) * numpy.pi) * scale
 
     if unitary:

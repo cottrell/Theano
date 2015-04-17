@@ -8,6 +8,8 @@ import logging
 import os
 import sys
 import warnings
+import collections
+from functools import reduce
 # Not available on all platforms
 hashlib = None
 
@@ -106,8 +108,8 @@ def debugprint(obj, depth=-1, print_type=False,
             results_to_print.extend(obj.outputs)
             profile_list.extend([None for item in obj.outputs])
             order = obj.toposort()
-        elif isinstance(obj, (int, long, float, numpy.ndarray)):
-            print obj
+        elif isinstance(obj, (int, float, numpy.ndarray)):
+            print(obj)
         elif isinstance(obj, (theano.In, theano.Out)):
             results_to_print.append(obj.variable)
             profile_list.append(None)
@@ -123,7 +125,7 @@ def debugprint(obj, depth=-1, print_type=False,
                     scan_ops.append(r)
 
         if p is not None:
-            print >> _file, """
+            print("""
 Timing Info
 -----------
 --> <time> <% time> - <total time> <% total time>'
@@ -139,20 +141,20 @@ N.B.:
   if inputs to a node share a common ancestor and should be viewed as a
   loose upper bound. Their intended use is to help rule out potential nodes
   to remove when optimizing a graph because their <total time> is very low.
-"""
+""", file=_file)
 
         debugmode.debugprint(r, depth=depth, done=done, print_type=print_type,
                              file=_file, order=order, ids=ids,
                              scan_ops=scan_ops, stop_on_name=stop_on_name,
                              profile=p)
     if len(scan_ops) > 0:
-        print >> _file, ""
+        print("", file=_file)
         new_prefix = ' >'
         new_prefix_child = ' >'
-        print >> _file, "Inner graphs of the scan ops:"
+        print("Inner graphs of the scan ops:", file=_file)
 
         for s in scan_ops:
-            print >> _file, ""
+            print("", file=_file)
             debugmode.debugprint(s, depth=depth, done=done,
                                  print_type=print_type,
                                  file=_file, ids=ids,
@@ -185,11 +187,11 @@ N.B.:
 def _print_fn(op, xin):
     for attr in op.attrs:
         temp = getattr(xin, attr)
-        if callable(temp):
+        if isinstance(temp, collections.Callable):
             pmsg = temp()
         else:
             pmsg = temp
-        print op.message, attr, '=', pmsg
+        print(op.message, attr, '=', pmsg)
 
 
 class Print(Op):
@@ -319,7 +321,7 @@ class PatternPrinter:
     def __init__(self, *patterns):
         self.patterns = []
         for pattern in patterns:
-            if isinstance(pattern, basestring):
+            if isinstance(pattern, str):
                 self.patterns.append((pattern, ()))
             else:
                 self.patterns.append((pattern[0], pattern[1:]))
@@ -457,17 +459,17 @@ class PPrinter:
         current = None
         if display_inputs:
             strings = [(0, "inputs: " + ", ".join(
-                        map(str, list(inputs) + updates.keys())))]
+                        map(str, list(inputs) + list(updates.keys()))))]
         else:
             strings = []
         pprinter = self.clone_assign(lambda pstate, r: r.name is not None
                                      and r is not current,
                                      LeafPrinter())
-        inv_updates = dict((b, a) for (a, b) in updates.iteritems())
+        inv_updates = dict((b, a) for (a, b) in updates.items())
         i = 1
-        for node in gof.graph.io_toposort(list(inputs) + updates.keys(),
+        for node in gof.graph.io_toposort(list(inputs) + list(updates.keys()),
                                           list(outputs) +
-                                          updates.values()):
+                                          list(updates.values())):
             for output in node.outputs:
                 if output in inv_updates:
                     name = str(inv_updates[output])
@@ -520,14 +522,14 @@ if use_ascii:
                  epsilon="\\epsilon")
 else:
 
-    special = dict(middle_dot=u"\u00B7",
-                   big_sigma=u"\u03A3")
+    special = dict(middle_dot="\u00B7",
+                   big_sigma="\u03A3")
 
-    greek = dict(alpha=u"\u03B1",
-                 beta=u"\u03B2",
-                 gamma=u"\u03B3",
-                 delta=u"\u03B4",
-                 epsilon=u"\u03B5")
+    greek = dict(alpha="\u03B1",
+                 beta="\u03B2",
+                 gamma="\u03B3",
+                 delta="\u03B4",
+                 epsilon="\u03B5")
 
 
 pprint = PPrinter()
@@ -818,7 +820,7 @@ def pydotprint(fct, outfile=None,
         astr = apply_name(node)
 
         use_color = None
-        for opName, color in colorCodes.items():
+        for opName, color in list(colorCodes.items()):
             if opName in node.op.__class__.__name__:
                 use_color = color
 
@@ -847,10 +849,10 @@ def pydotprint(fct, outfile=None,
                 label = label[:max_label_size - 3] + '...'
             param = {}
             if hasattr(node.op, 'view_map') and id in reduce(
-                    list.__add__, node.op.view_map.values(), []):
+                    list.__add__, list(node.op.view_map.values()), []):
                     param['color'] = 'blue'
             elif hasattr(node.op, 'destroy_map') and id in reduce(
-                    list.__add__, node.op.destroy_map.values(), []):
+                    list.__add__, list(node.op.destroy_map.values()), []):
                         param['color'] = 'red'
             if var.owner is None:
                 if high_contrast:
@@ -930,7 +932,7 @@ def pydotprint(fct, outfile=None,
     else:
         g.write(outfile, prog='dot', format=format)
         if print_output_file:
-            print 'The output file is available at', outfile
+            print('The output file is available at', outfile)
 
 
 def pydotprint_variables(vars,
@@ -960,7 +962,7 @@ def pydotprint_variables(vars,
     except ImportError:
         err = ("Failed to import pydot. You must install pydot for " +
                "`pydotprint_variables` to work.")
-        print err
+        print(err)
         return
     g = pd.Dot()
     my_list = {}
@@ -1005,13 +1007,13 @@ def pydotprint_variables(vars,
             return
         if app in my_list:
             return
-        astr = apply_name(app) + '_' + str(len(my_list.keys()))
+        astr = apply_name(app) + '_' + str(len(list(my_list.keys())))
         if len(astr) > max_label_size:
             astr = astr[:max_label_size - 3] + '...'
         my_list[app] = astr
 
         use_color = None
-        for opName, color in colorCodes.items():
+        for opName, color in list(colorCodes.items()):
             if opName in app.op.__class__.__name__:
                 use_color = color
 
@@ -1025,7 +1027,7 @@ def pydotprint_variables(vars,
 
         for i, nd in enumerate(app.inputs):
             if nd not in my_list:
-                varastr = var_name(nd) + '_' + str(len(my_list.keys()))
+                varastr = var_name(nd) + '_' + str(len(list(my_list.keys())))
                 if len(varastr) > max_label_size:
                     varastr = varastr[:max_label_size - 3] + '...'
                 my_list[nd] = varastr
@@ -1045,7 +1047,7 @@ def pydotprint_variables(vars,
 
         for i, nd in enumerate(app.outputs):
             if nd not in my_list:
-                varastr = var_name(nd) + '_' + str(len(my_list.keys()))
+                varastr = var_name(nd) + '_' + str(len(list(my_list.keys())))
                 if len(varastr) > max_label_size:
                     varastr = varastr[:max_label_size - 3] + '...'
                 my_list[nd] = varastr
@@ -1082,7 +1084,7 @@ def pydotprint_variables(vars,
             plot_apply(nd.owner, depth)
     try:
         g.write(outfile, prog='dot', format=format)
-    except pd.InvocationException, e:
+    except pd.InvocationException as e:
         # Some version of pydot are bugged/don't work correctly with
         # empty label. Provide a better user error message.
         if pd.__version__ == "1.0.28" and "label=]" in e.message:
@@ -1097,7 +1099,7 @@ def pydotprint_variables(vars,
                             e.message)
         raise
 
-    print 'The output file is available at', outfile
+    print('The output file is available at', outfile)
 
 
 class _TagGenerator:
@@ -1270,7 +1272,7 @@ def var_descriptor(obj, _prev_obs=None, _tag_generator=None):
             # The __str__ method is encoding the object's id in its str
             name = position_independent_str(obj)
             if ' at 0x' in name:
-                print name
+                print(name)
                 assert False
 
     prefix = cur_tag + '='

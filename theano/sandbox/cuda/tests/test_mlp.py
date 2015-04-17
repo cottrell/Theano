@@ -1,7 +1,7 @@
 import copy
 import logging
 import time
-from itertools import izip
+
 
 from nose.plugins.skip import SkipTest
 import numpy
@@ -59,14 +59,14 @@ def get_mode(use_gpu, check_isfinite=True):
 
 
 def print_mode(mode):
-    if mode is not None and isinstance(mode, (theano.compile.ProfileMode,)):
+    if mode is not None and isinstance(mode, theano.compile.ProfileMode):
         mode.print_summary()
 
 
 def print_diff_mode(a, b):
     if (a is not None and
-        isinstance(a, (theano.compile.ProfileMode,)) and
-        isinstance(b, (theano.compile.ProfileMode,))):
+        isinstance(a, theano.compile.ProfileMode) and
+        isinstance(b, theano.compile.ProfileMode)):
 
         a.print_diff_summary(b)
 
@@ -96,7 +96,7 @@ def run_nnet(use_gpu, n_batch=60, n_in=1024, n_hid=2048, n_out=10,
     out = tensor.tanh(tensor.dot(hid, v) + c)
     loss = tensor.sum(0.5 * (out - y) ** 2 * lr)
     if 0:
-        print 'loss type', loss.type
+        print('loss type', loss.type)
 
     params = [w, b, v, c]
     gparams = tensor.grad(loss, params)
@@ -105,11 +105,11 @@ def run_nnet(use_gpu, n_batch=60, n_in=1024, n_hid=2048, n_out=10,
 
     # print 'building pfunc ...'
     train = pfunc([x, y, lr], [loss], mode=mode,
-                  updates=[(p, p - g) for p, g in izip(params, gparams)])
+                  updates=[(p, p - g) for p, g in zip(params, gparams)])
 
     if 0:
         for i, n in enumerate(train.maker.fgraph.toposort()):
-            print i, n
+            print(i, n)
 
     xval = my_rand(n_batch, n_in)
     yval = my_rand(n_batch, n_out)
@@ -117,7 +117,7 @@ def run_nnet(use_gpu, n_batch=60, n_in=1024, n_hid=2048, n_out=10,
 
     t0 = time.time()
     rval = []
-    for i in xrange(n_train):
+    for i in range(n_train):
         rval.append(train(xval, yval, lr))
     dt = time.time() - t0
 
@@ -211,7 +211,7 @@ def run_conv_nnet1(use_gpu):
     yval = my_rand(n_batch, n_out)
     lr = theano._asarray(0.01, dtype='float32')
 
-    for i in xrange(n_train):
+    for i in range(n_train):
         rval = train(xval, yval, lr)
     # print 'training done'
     print_mode(mode)
@@ -302,7 +302,7 @@ def run_conv_nnet2(use_gpu):  # pretend we are training LeNet for MNIST
     xval = my_rand(*shape_img)
     yval = my_rand(n_batch, n_out)  # int32 make all 0...
     lr = theano._asarray(0.01, dtype='float32')
-    for i in xrange(n_train):
+    for i in range(n_train):
         rval = train(xval, yval, lr)
 
     print_mode(mode)
@@ -329,7 +329,7 @@ def build_conv_nnet2_classif(use_gpu, isize, ksize, n_batch,
 
     isize1 = isize
     isize2 = isize
-    if isinstance(isize, (tuple, )):
+    if isinstance(isize, tuple):
         isize1 = isize[0]
         isize2 = isize[1]
 
@@ -439,16 +439,16 @@ def run_conv_nnet2_classif(use_gpu, seed, isize, ksize, bsize,
 
     rvals = my_zeros(n_train)
     t0 = time.time()
-    for i in xrange(n_train):
+    for i in range(n_train):
         rvals[i] = train(xval, yval, lr)[0]
     t1 = time.time()
     print_mode(mode)
 
     if pickle and isinstance(mode, theano.compile.ProfileMode):
         import pickle
-        print "BEGIN %s profile mode dump" % device
-        print pickle.dumps(mode)
-        print "END %s profile mode dump" % device
+        print("BEGIN %s profile mode dump" % device)
+        print(pickle.dumps(mode))
+        print("END %s profile mode dump" % device)
 
     # print "%s time: %.3f" % (device, t1-t0)
     # print "estimated time for one pass through MNIST with %s: %f" % (
@@ -549,12 +549,12 @@ def cmp_run_conv_nnet2_classif(seed, isize, ksize, bsize,
             # Compare results
             if (verbose or not
                     numpy.allclose(rval_cpu, rval_gpu, rtol=1e-5, atol=float_atol)):
-                print "At batch:", i + 1
-                print "CPU:", rval_cpu
-                print "GPU:", rval_gpu
-                print "abs diff:", numpy.absolute(rval_gpu - rval_cpu)
-                print "rel diff:", numpy.absolute((
-                    rval_gpu - rval_cpu) / rval_gpu)
+                print("At batch:", i + 1)
+                print("CPU:", rval_cpu)
+                print("GPU:", rval_gpu)
+                print("abs diff:", numpy.absolute(rval_gpu - rval_cpu))
+                print("rel diff:", numpy.absolute((
+                    rval_gpu - rval_cpu) / rval_gpu))
 
             if not ignore_error:
                 assert numpy.allclose(rval_cpu, rval_gpu,
@@ -571,14 +571,14 @@ def cmp_run_conv_nnet2_classif(seed, isize, ksize, bsize,
     if pickle:
         if isinstance(cpu_mode, theano.compile.ProfileMode):
             import pickle
-            print "BEGIN CPU profile mode dump"
-            print pickle.dumps(cpu_mode)
-            print "END CPU profile mode dump"
+            print("BEGIN CPU profile mode dump")
+            print(pickle.dumps(cpu_mode))
+            print("END CPU profile mode dump")
         if isinstance(gpu_mode, theano.compile.ProfileMode):
             import pickle
-            print "BEGIN GPU profile mode dump"
-            print pickle.dumps(gpu_mode)
-            print "END GPU profile mode dump"
+            print("BEGIN GPU profile mode dump")
+            print(pickle.dumps(gpu_mode))
+            print("END GPU profile mode dump")
 
     # print "CPU time: %.3f, GPU time: %.3f, speed up %f" % (
     #        (time_cpu, time_gpu, time_cpu/time_gpu))

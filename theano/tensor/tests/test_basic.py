@@ -7,10 +7,11 @@ from tempfile import mkstemp
 import unittest
 import warnings
 from copy import copy, deepcopy
-from itertools import izip
+from functools import reduce
+
 # Import builtin min to be able to use it after importing the tensor version.
-import __builtin__
-builtin_min = __builtin__.min
+import builtins
+builtin_min = builtins.min
 from nose.tools import assert_raises
 from nose.plugins.skip import SkipTest
 from nose.plugins.attrib import attr
@@ -331,7 +332,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
 
             good = self.add_memmap_values(self.good)
 
-            for testname, inputs in good.items():
+            for testname, inputs in list(good.items()):
                 inputs = [copy(input) for input in inputs]
                 inputrs = [TensorType(
                             dtype=input.dtype,
@@ -340,7 +341,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
                             )() for input in inputs]
                 try:
                     node = safe_make_node(self.op, *inputrs)
-                except Exception, exc:
+                except Exception as exc:
                     err_msg = ("Test %s::%s: Error occurred while"
                             " making a node with inputs %s") % (
                                     self.op, testname, inputs)
@@ -349,7 +350,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
 
                 try:
                     f = inplace_func(inputrs, node.outputs, mode=mode, name='test_good')
-                except Exception, exc:
+                except Exception as exc:
                     err_msg = ("Test %s::%s: Error occurred while"
                         " trying to make a Function") % (self.op, testname)
                     exc.args += (err_msg,)
@@ -372,7 +373,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
 
                 try:
                     variables = f(*inputs)
-                except Exception, exc:
+                except Exception as exc:
                     err_msg = ("Test %s::%s: Error occurred while calling"
                     " the Function on the inputs %s") % (
                             self.op, testname, inputs)
@@ -383,7 +384,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
                     expecteds = (expecteds, )
 
                 for i, (variable, expected) in enumerate(
-                        izip(variables, expecteds)):
+                        zip(variables, expecteds)):
                     if (variable.dtype != expected.dtype
                             or variable.shape != expected.shape
                             or not numpy.allclose(variable, expected,
@@ -405,7 +406,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
                                     atol=eps, rtol=eps),
                                 numpy.allclose(variable, expected)))
 
-                for description, check in self.checks.items():
+                for description, check in list(self.checks.items()):
                     if not check(inputs, variables):
                         self.fail(("Test %s::%s: Failed check: %s (inputs"
                             " were %s, outputs were %s)") % (
@@ -415,7 +416,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
         def test_bad_build(self):
             if skip:
                 raise SkipTest(skip)
-            for testname, inputs in self.bad_build.items():
+            for testname, inputs in list(self.bad_build.items()):
                 inputs = [copy(input) for input in inputs]
                 inputrs = [shared(input) for input in inputs]
                 self.assertRaises(Exception,
@@ -427,11 +428,11 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
         def test_bad_runtime(self):
             if skip:
                 raise SkipTest(skip)
-            for testname, inputs in self.bad_runtime.items():
+            for testname, inputs in list(self.bad_runtime.items()):
                 inputrs = [shared(input) for input in inputs]
                 try:
                     node = safe_make_node(self.op, *inputrs)
-                except Exception, exc:
+                except Exception as exc:
                     err_msg = ("Test %s::%s: Error occurred while trying"
                         " to make a node with inputs %s") % (
                             self.op, testname, inputs)
@@ -440,7 +441,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
 
                 try:
                     f = inplace_func([], node.outputs, mode=mode, name="test_bad_runtime")
-                except Exception, exc:
+                except Exception as exc:
                     err_msg = ("Test %s::%s: Error occurred while trying"
                         " to make a Function") % (self.op, testname)
                     exc.args += (err_msg,)
@@ -459,13 +460,13 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
             backup = config.warn.sum_div_dimshuffle_bug
             config.warn.sum_div_dimshuffle_bug = False
             try:
-                for testname, inputs in self.grad.items():
+                for testname, inputs in list(self.grad.items()):
                     inputs = [copy(input) for input in inputs]
                     try:
                         utt.verify_grad(self.op, inputs,
                                 mode=self.mode,
                                 rel_tol=_grad_rtol)
-                    except Exception, exc:
+                    except Exception as exc:
                         err_msg = ("Test %s::%s: Error occurred while"
                             " computing the gradient on the following"
                             " inputs: %s") % (self.op, testname, inputs)
@@ -486,7 +487,7 @@ def makeTester(name, op, expected, checks=None, good=None, bad_build=None,
                 # This is not actually an Op
                 return
 
-            for testname, inputs in self.good.items():
+            for testname, inputs in list(self.good.items()):
                 inputs = [copy(input) for input in inputs]
                 inputrs = [TensorType(
                             dtype=input.dtype,
@@ -824,7 +825,7 @@ def copymod(dct, without=None, **kwargs):
     for a in without:
         if a in rval:
             del rval[a]
-    for kw, val in kwargs.items():
+    for kw, val in list(kwargs.items()):
         rval[kw] = val
     return rval
 
@@ -839,7 +840,7 @@ _good_broadcast_div_mod_normal_float_no_complex = dict(
     uinteger=(randint(2, 3).astype("uint8"),
               randint_nonzero(2, 3).astype("uint8")),
     int8=[numpy.tile(numpy.arange(-127, 128, dtype='int8'), [254, 1]).T,
-          numpy.tile(numpy.array(range(-127, 0) + range(1, 128), dtype='int8'),
+          numpy.tile(numpy.array(list(range(-127, 0)) + list(range(1, 128)), dtype='int8'),
                      [255, 1])],
     # This empty2 doesn't work for some tests. I don't remember why
     #empty2=(numpy.asarray([0]), numpy.asarray([])),
@@ -926,7 +927,7 @@ TrueDivInplaceTester = makeBroadcastTester(
 _good_inv = dict(
     normal=[5 * rand_nonzero((2, 3))],
     integers=[randint_nonzero(2, 3)],
-    int8=[numpy.array(range(-127, 0) + range(1, 127), dtype='int8')],
+    int8=[numpy.array(list(range(-127, 0)) + list(range(1, 127)), dtype='int8')],
     complex=[randcomplex_nonzero((2, 3))],
     empty=[numpy.asarray([], dtype=config.floatX)])
 
@@ -2548,7 +2549,7 @@ def _approx_eq(a, b, eps=1.0e-4):
     b = numpy.asarray(b)
     if a.shape != b.shape:
         if _approx_eq.debug:
-            print a.shape, b.shape
+            print(a.shape, b.shape)
         return False
     abs_rel_err = numeric_grad.abs_rel_err(a, b)
     # numpy.max don't like empty ndarray.
@@ -2556,7 +2557,7 @@ def _approx_eq(a, b, eps=1.0e-4):
         return True
     if numpy.max(abs_rel_err) >= eps:
         if _approx_eq.debug:
-            print a, b
+            print(a, b)
         return False
     return  True
 _approx_eq.debug = 0
@@ -2654,8 +2655,8 @@ def test_nan_inf_constant_signature():
     n = len(test_constants)
     # We verify that signatures of two rows i, j in the matrix above are
     # equal if and only if i == j.
-    for i in xrange(n):
-        for j in xrange(n):
+    for i in range(n):
+        for j in range(n):
             x = constant(test_constants[i])
             y = constant(test_constants[j])
             assert (x.signature() == y.signature()) == (i == j)
@@ -2736,7 +2737,7 @@ class T_max_and_argmax(unittest.TestCase):
             try:
                 eval_outputs(max_and_argmax(n, 3))
                 assert False
-            except ValueError, e:
+            except ValueError as e:
                 pass
         finally:
             _logger.setLevel(oldlevel)
@@ -2749,7 +2750,7 @@ class T_max_and_argmax(unittest.TestCase):
             try:
                 eval_outputs(max_and_argmax(n, -3))
                 assert False
-            except ValueError, e:
+            except ValueError as e:
                 pass
         finally:
             sys.stderr = old_stderr
@@ -2817,7 +2818,7 @@ class T_max_and_argmax(unittest.TestCase):
             # Compute pairwise absolute differences.
             diff = numpy.abs(data_vector.reshape((-1, 1)) - data_vector)
             # Alter the diagonal to avoid a zero minimum.
-            for i in xrange(len(diff)):
+            for i in range(len(diff)):
                 diff[i, i] = 1
             # Find an appropriate epsilon.
             eps = builtin_min(numeric_grad.type_eps[config.floatX],
@@ -2845,7 +2846,7 @@ class T_max_and_argmax(unittest.TestCase):
             assert numpy.all(max_grad_data == z)
 
         for axis in (-1, 0, 1, None):
-            for j in xrange(2):
+            for j in range(2):
                 safe_verify_grad(lambda v: max_and_argmax(v, axis=axis)[j],
                                 [data])
                 if axis != 1:
@@ -2929,7 +2930,7 @@ class T_argmin_argmax(unittest.TestCase):
                 try:
                     eval_outputs(fct(n, 3))
                     assert False
-                except ValueError, e:
+                except ValueError as e:
                     pass
             finally:
                 _logger.setLevel(oldlevel)
@@ -2943,7 +2944,7 @@ class T_argmin_argmax(unittest.TestCase):
                 try:
                     eval_outputs(fct(n, -3))
                     assert False
-                except ValueError, e:
+                except ValueError as e:
                     pass
             finally:
                 sys.stderr = old_stderr
@@ -3062,7 +3063,7 @@ class T_min_max(unittest.TestCase):
                 try:
                     eval_outputs(fct(n, 3))
                     assert False
-                except ValueError, e:
+                except ValueError as e:
                     pass
             finally:
                 _logger.setLevel(oldlevel)
@@ -3076,7 +3077,7 @@ class T_min_max(unittest.TestCase):
                 try:
                     eval_outputs(fct(n, -3))
                     assert False
-                except ValueError, e:
+                except ValueError as e:
                     pass
             finally:
                 sys.stderr = old_stderr
@@ -4174,7 +4175,7 @@ class test_matinv(unittest.TestCase):
         x = numpy.asarray(x, dtype=config.floatX)
         w = numpy.asarray(w, dtype=config.floatX)
 
-        for i in xrange(100):
+        for i in range(100):
             ssd, gw = fn(x, w)
             # print ssd, x*w, x, w
             if i == 0:
@@ -4197,7 +4198,7 @@ class test_matinv(unittest.TestCase):
 
         myssd0 = numpy.sum((x * w - ones) ** 2.0)
         # we want at least a test that is not too fast. So we make one here.
-        for i in xrange(100):
+        for i in range(100):
             gw = 2 * (x * w - ones) * x  # derivative of dMSE/dw
             myssd = numpy.sum((x * w - ones) ** 2)
             w -= 0.4 * gw
@@ -4354,7 +4355,7 @@ class t_dot(unittest.TestCase):
             try:
                 tz = eval_outputs([z])
                 assert False    # should have raised exception
-            except ValueError, e:
+            except ValueError as e:
                 e0 = exc_message(e)
                 self.assertTrue(
                     # Reported by numpy.
@@ -4772,8 +4773,8 @@ class T_reshape(utt.InferShapeTester, utt.TestOptimizationMixin):
 
     def test_reshape_long_in_shape(self):
         v = dvector('v')
-        r = v.reshape((v.shape[0], 1L))
-        print r.eval({v: numpy.arange(5.)})
+        r = v.reshape((v.shape[0], 1))
+        print(r.eval({v: numpy.arange(5.)}))
         assert numpy.allclose(r.eval({v: numpy.arange(5.)}).T,
                               numpy.arange(5.))
 
@@ -5843,8 +5844,8 @@ def _test_autocast_numpy():
 
     def ok(z):
         assert tensor.constant(z).dtype == numpy.asarray(z).dtype
-    for x in ([2 ** i for i in xrange(63)] +
-              [0, 0L, 1L, 2L ** 63 - 1] +
+    for x in ([2 ** i for i in range(63)] +
+              [0, 0, 1, 2 ** 63 - 1] +
               [0., 1., 1.1, 1.5]):
         n_x = numpy.asarray(x)
         # Make sure the data type is the same as the one found by numpy.
@@ -5876,8 +5877,8 @@ def _test_autocast_numpy_floatX():
             # We only consider 'int' and 'long' Python values that can fit
             # into int64, as that is the maximal integer type that Theano
             # supports, and that is the maximal type in Python indexing.
-            for x in ([2 ** i - 1 for i in xrange(64)] +
-                      [0, 0L, 1L, 2L ** 63 - 1] +
+            for x in ([2 ** i - 1 for i in range(64)] +
+                      [0, 0, 1, 2 ** 63 - 1] +
                       [0., 1., 1.1, 1.5]):
                 ok(x, floatX)
                 ok(-x, floatX)
@@ -5941,10 +5942,10 @@ class test_arithmetic_cast(unittest.TestCase):
                                           ('i_scalar', 'i_scalar'),
                                           ):
 
-                                theano_args = map(eval,
-                                        ['theano_%s' % c for c in combo])
-                                numpy_args = map(eval,
-                                        ['numpy_%s' % c for c in combo])
+                                theano_args = list(map(eval,
+                                        ['theano_%s' % c for c in combo]))
+                                numpy_args = list(map(eval,
+                                        ['numpy_%s' % c for c in combo]))
                                 try:
                                     theano_dtype = op(
                                         theano_args[0](a_type),
@@ -5969,7 +5970,7 @@ class test_arithmetic_cast(unittest.TestCase):
                                         op(numpy_args[1](b_type),
                                            numpy_args[0](a_type)).dtype]
                                 numpy_dtype = theano.scalar.upcast(
-                                        *map(str, numpy_dtypes))
+                                        *list(map(str, numpy_dtypes)))
                                 if numpy_dtype == theano_dtype:
                                     # Same data type found, all is good!
                                     continue
@@ -6044,8 +6045,8 @@ class test_arithmetic_cast(unittest.TestCase):
 
 class T_long_tensor(unittest.TestCase):
     def test_fit_int64(self):
-        for exp in xrange(64):
-            val = 2L ** exp - 1
+        for exp in range(64):
+            val = 2 ** exp - 1
             scalar_ct = constant(val)
             assert scalar_ct.dtype.startswith('int')
             assert scalar_ct.value == val
@@ -6059,7 +6060,7 @@ class T_long_tensor(unittest.TestCase):
             assert numpy.all(matrix_ct.value == val)
 
     def test_too_big(self):
-        val = 2L ** 63
+        val = 2 ** 63
         # NumPy 1.7 this will raise an exception
         # NumPy 1.7.1 this will work
         try:
@@ -6086,7 +6087,7 @@ class T_long_tensor(unittest.TestCase):
         except TypeError:
             pass
 
-        val = 2L ** 64
+        val = 2 ** 64
         # This fail for all NumPy version.
         self.assertRaises(Exception, constant, val)
         self.assertRaises(Exception, constant, [val, val])
@@ -6275,7 +6276,7 @@ def test_unalign():
         assert not b.flags.aligned
         assert numpy.allclose(out_numpy, out_theano)
         assert False
-    except TypeError, e:
+    except TypeError as e:
         pass
 
     a = numpy.empty((), dtype=dtype)['f1']
@@ -6293,7 +6294,7 @@ def test_unalign():
         assert not b.flags.aligned
         assert numpy.allclose(out_numpy, out_theano)
         assert False
-    except TypeError, e:
+    except TypeError as e:
         pass
 
 
@@ -6304,7 +6305,7 @@ def test_dimshuffle_duplicate():
 
     try:
         y = tensor.DimShuffle((False, ), (0, 0))(x)
-    except ValueError, e:
+    except ValueError as e:
         assert str(e).find("may not appear twice") != -1
         success = True
 
@@ -6549,7 +6550,7 @@ def test_transpose():
 
 
 def test_stacklists():
-    a, b, c, d = map(scalar, 'abcd')
+    a, b, c, d = list(map(scalar, 'abcd'))
     X = stacklists([[a, b],
                     [c, d]])
     f = function([a, b, c, d], X)

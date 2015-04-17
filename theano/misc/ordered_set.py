@@ -17,7 +17,7 @@ def check_deterministic(iterable):
     # theano to use exceptions correctly, so that this can be a TypeError.
     if iterable is not None:
         assert isinstance(iterable, (
-            list, tuple, OrderedSet, types.GeneratorType, basestring))
+            list, tuple, OrderedSet, types.GeneratorType, str))
 
 if MutableSet is not None:
     # Copyright (C) 2009 Raymond Hettinger
@@ -52,7 +52,7 @@ if MutableSet is not None:
             # weakref.proxy don't pickle well, so we use weakref.ref
             # manually and don't pickle the weakref.
             # We restore the weakref when we unpickle.
-            ret = [self.prev(), self.next()]
+            ret = [self.prev(), next(self)]
             try:
                 ret.append(self.key)
             except AttributeError:
@@ -85,7 +85,7 @@ if MutableSet is not None:
             # Checks added by IG
             check_deterministic(iterable)
             self.__root = root = Link()         # sentinel node for doubly linked list
-            root.prev = root.next = weakref.ref(root)
+            root.prev = root.__next__ = weakref.ref(root)
             self.__map = {}                     # key --> link
             if iterable is not None:
                 self |= iterable
@@ -139,16 +139,16 @@ if MutableSet is not None:
             # then removed by updating the links in the predecessor and successors.
             if key in self.__map:
                 link = self.__map.pop(key)
-                link.prev().next = link.next
+                link.prev().next = link.__next__
                 link.next().prev = link.prev
 
         def __iter__(self):
             # Traverse the linked list in order.
             root = self.__root
-            curr = root.next()
+            curr = next(root)
             while curr is not root:
                 yield curr.key
-                curr = curr.next()
+                curr = next(curr)
 
         def __reversed__(self):
             # Traverse the linked list in reverse order.
@@ -263,7 +263,7 @@ else:
 
 
 if __name__ == '__main__':
-    print list(OrderedSet('abracadaba'))
-    print list(OrderedSet('simsalabim'))
-    print OrderedSet('boom') == OrderedSet('moob')
-    print OrderedSet('boom') == 'moob'
+    print(list(OrderedSet('abracadaba')))
+    print(list(OrderedSet('simsalabim')))
+    print(OrderedSet('boom') == OrderedSet('moob'))
+    print(OrderedSet('boom') == 'moob')

@@ -13,6 +13,7 @@ from theano.compat.six import StringIO
 
 import theano
 from theano.compat import configparser as ConfigParser
+import collections
 
 _logger = logging.getLogger('theano.configparser')
 
@@ -129,10 +130,10 @@ _config_var_list = []
 
 def _config_print(thing, buf):
     for cv in _config_var_list:
-        print >> buf, cv
-        print >> buf, "    Doc: ", cv.doc
-        print >> buf, "    Value: ", cv.__get__()
-        print >> buf, ""
+        print(cv, file=buf)
+        print("    Doc: ", cv.doc, file=buf)
+        print("    Value: ", cv.__get__(), file=buf)
+        print("", file=buf)
 
 
 def get_config_md5():
@@ -233,7 +234,7 @@ def AddConfigVar(name, doc, configparam, root=config, in_c_key=True):
         configparam.in_c_key = in_c_key
         # Trigger a read of the value from config files and env vars
         # This allow to filter wrong value from the user.
-        if not callable(configparam.default):
+        if not isinstance(configparam.default, collections.Callable):
             configparam.__get__()
         else:
             # We do not want to evaluate now the default value
@@ -277,7 +278,7 @@ class ConfigParam(object):
                     for v in self.default():
                         val_str = v
                         self.__set__(None, val_str)
-                elif callable(self.default):
+                elif isinstance(self.default, collections.Callable):
                     val_str = self.default()
                 else:
                     val_str = self.default
@@ -304,7 +305,7 @@ class EnumStr(ConfigParam):
 
         # All options should be strings
         for val in self.all:
-            if not isinstance(val, basestring):
+            if not isinstance(val, str):
                 raise ValueError('Valid values for an EnumStr parameter '
                                  'should be strings', val, type(val))
 
@@ -333,7 +334,7 @@ class TypedParam(ConfigParam):
 
         def filter(val):
             cast_val = mytype(val)
-            if callable(is_valid):
+            if isinstance(is_valid, collections.Callable):
                 if is_valid(cast_val):
                     return cast_val
                 else:

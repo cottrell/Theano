@@ -5,10 +5,11 @@ Tensor optimizations addressing the ops in basic.py
 # TODO: 0*x -> 0
 
 import logging
+from functools import reduce
 _logger = logging.getLogger('theano.tensor.opt')
 
 import itertools
-from itertools import izip
+
 import operator
 import sys
 import time
@@ -158,7 +159,7 @@ def broadcast_like(value, template, fgraph, dtype=None):
     rval = T.alloc(T.cast(value, dtype), *new_shape)
     # the template may have 1s in its shape without being broadcastable
     if rval.broadcastable != template.broadcastable:
-        rval = T.unbroadcast(rval, *[i for i in xrange(rval.ndim)
+        rval = T.unbroadcast(rval, *[i for i in range(rval.ndim)
                                      if rval.broadcastable[i]
             and not template.broadcastable[i]])
     assert rval.type.dtype == dtype
@@ -237,14 +238,14 @@ def inplace_elemwise_optimizer_op(OP):
                 isinstance(f, theano.compile.function_module.Supervisor)]
             protected_inputs = sum(protected_inputs, [])  # flatten the list
             protected_inputs.extend(fgraph.outputs)
-            candidate_outputs = [i for i in xrange(len(node.outputs))
+            candidate_outputs = [i for i in range(len(node.outputs))
                                  if i not in baseline]
             # node inputs that are Constant, already destroyed,
             # fgraph protected inputs and fgraph outputs can't be used as inplace
             # target.
             # Remove here as faster.
-            candidate_inputs = [i for i in xrange(len(node.inputs))
-                                if i not in baseline.values() \
+            candidate_inputs = [i for i in range(len(node.inputs))
+                                if i not in list(baseline.values()) \
                                     and not isinstance(node.inputs[i],
                                                        Constant)\
                                     and not fgraph.destroyers(node.inputs[i])\
@@ -268,12 +269,12 @@ def inplace_elemwise_optimizer_op(OP):
                             new_scal = op.scalar_op.make_new_inplace(
                                 scalar.transfer_type(
                                     *[inplace_pattern.get(i, None) \
-                                          for i in xrange(len(node.outputs))]))
+                                          for i in range(len(node.outputs))]))
                         else:
                             new_scal = op.scalar_op.__class__(
                                 scalar.transfer_type(
                                     *[inplace_pattern.get(i, None) \
-                                          for i in xrange(len(node.outputs))]))
+                                          for i in range(len(node.outputs))]))
                         new_outputs = OP(new_scal, inplace_pattern)(
                                 *node.inputs, **dict(return_list=True))
                         new_node = new_outputs[0].owner
@@ -286,12 +287,12 @@ def inplace_elemwise_optimizer_op(OP):
                             fgraph.validate()
                             chk = fgraph.checkpoint()
                             nb_change_no_validate = 0
-                    except (ValueError, TypeError, InconsistencyError), e:
+                    except (ValueError, TypeError, InconsistencyError) as e:
                         if check_each_change != 1 and not raised_warning:
-                            print >> sys.stderr, (
+                            print((
                                     "Some inplace optimization was not "
-                                    "performed due to unexpected error:")
-                            print >> sys.stderr, e
+                                    "performed due to unexpected error:"), file=sys.stderr)
+                            print(e, file=sys.stderr)
                             raised_warning = True
                         fgraph.revert(chk)
                         continue
@@ -305,8 +306,8 @@ def inplace_elemwise_optimizer_op(OP):
                 fgraph.validate()
             except Exception:
                 if not raised_warning:
-                    print >> sys.stderr, ("Some inplace optimization was not "
-                                          "performed due to unexpected error")
+                    print(("Some inplace optimization was not "
+                                          "performed due to unexpected error"), file=sys.stderr)
                 fgraph.revert(chk)
     return inplace_elemwise_optimizer
 
@@ -456,7 +457,7 @@ def local_dimshuffle_lift(node):
                      op.new_order]
         inplace = op.inplace and inode.op.inplace
         iinput = inode.inputs[0]
-        if new_order == range(len(new_order)) and (len(new_order) ==
+        if new_order == list(range(len(new_order))) and (len(new_order) ==
                                                    iinput.type.ndim):
             return [iinput]
         else:
@@ -567,7 +568,7 @@ class MakeVector(T.Op):
         return hash(type(self)) ^ hash(self.dtype)
 
     def make_node(self, *inputs):
-        inputs = map(T.as_tensor_variable, inputs)
+        inputs = list(map(T.as_tensor_variable, inputs))
         if not all(a.type == inputs[0].type for a in inputs) or (
             len(inputs) > 0 and inputs[0].dtype != self.dtype):
             dtype = theano.scalar.upcast(self.dtype,
@@ -781,7 +782,7 @@ class ShapeFeature(object):
         if not hasattr(r, 'ndim'):
             # This happen for NoneConst.
             return None
-        return tuple([self.shape_ir(i, r) for i in xrange(r.ndim)])
+        return tuple([self.shape_ir(i, r) for i in range(r.ndim)])
 
     def default_infer_shape(self, node, i_shapes):
         """Return a list of shape tuple or None for the outputs of node.
@@ -809,7 +810,7 @@ class ShapeFeature(object):
             # don't make the optimizer merge a zillion ones together
             # by always returning the same object to represent 1
             return self.lscalar_one
-        if (type(s_i) in (int, long) or
+        if (type(s_i) in (int, int) or
             isinstance(s_i, numpy.integer) or
             (isinstance(s_i, numpy.ndarray) and s_i.ndim == 0)):
             # this shape is a constant
@@ -1049,14 +1050,14 @@ class ShapeFeature(object):
         except ShapeError:
             o_shapes = self.default_infer_shape(node, [self.shape_of[r] for
                                                        r in node.inputs])
-        except NotImplementedError, e:
+        except NotImplementedError as e:
             raise NotImplementedError(
                     'Code called by infer_shape failed raising a '
                     'NotImplementedError. Raising NotImplementedError to '
                     'indicate that a shape cannot be computed is no longer '
                     'supported, and one should now use tensor.ShapeError '
                     'instead. The original exception message is: %s' % e)
-        except Exception, e:
+        except Exception as e:
             msg = ('Failed to infer_shape from Op %s.\nInput shapes: '
                    '%s\nException encountered during infer_shape: '
                    '%s\nException message: %s\nTraceback: %s') % (
@@ -1106,7 +1107,7 @@ class ShapeFeature(object):
                 new_shape += sh[len(new_shape):]
                 o_shapes[sh_idx] = tuple(new_shape)
 
-        for r, s in izip(node.outputs, o_shapes):
+        for r, s in zip(node.outputs, o_shapes):
             self.set_shape(r, s)
 
     def on_change_input(self, fgraph, node, i, r, new_r, reason):
@@ -1157,7 +1158,7 @@ class ShapeFeature(object):
                 self.scheduled[shpnode] = new_r
         # In case 2, if r is a variable that we've scheduled for shape update,
         # then we should cancel it.
-        unscheduled = [k for k, v in self.scheduled.items() if v == r]
+        unscheduled = [k for k, v in list(self.scheduled.items()) if v == r]
         for k in unscheduled:
             del self.scheduled[k]
 
@@ -1397,7 +1398,7 @@ def local_subtensor_make_vector(node):
             except NotScalarConstantError:
                 pass
         elif idx.ndim == 1 and isinstance(idx, T.Constant):
-            values = map(int, list(idx.value))
+            values = list(map(int, list(idx.value)))
             return [make_vector(*[x.owner.inputs[v] for v in values])]
         else:
             raise TypeError('case not expected')
@@ -1603,7 +1604,7 @@ class Assert(T.Op):
         check = []
         fail = sub['fail']
         msg = self.msg.replace('"', '\\"').replace('\n', '\\n')
-        for idx in xrange(len(inames) - 1):
+        for idx in range(len(inames) - 1):
             i = inames[idx + 1]
             dtype = node.inputs[idx + 1].dtype
             check.append('if(!((npy_%(dtype)s*)PyArray_DATA(%(i)s))[0])'
@@ -1772,7 +1773,7 @@ def local_elemwise_alloc_op(ElemwiseOP, AllocOP, DimShuffleOP):
                     and not same_shape(i, cmp_op)):
                     assert_op = assert_(assert_op,
                                         *[T.eq(i.shape[idx], cmp_op.shape[idx])
-                                          for idx in xrange(i.type.ndim)
+                                          for idx in range(i.type.ndim)
                                           if not i.type.broadcastable[idx]])
                 new_i.append(i.owner.inputs[0])
 
@@ -1781,7 +1782,7 @@ def local_elemwise_alloc_op(ElemwiseOP, AllocOP, DimShuffleOP):
                 assert i.type.ndim == cmp_op.type.ndim
                 if theano.config.experimental.local_alloc_elemwise_assert:
                     assert_cond = [T.eq(i.shape[idx], cmp_op.shape[idx])
-                                   for idx in xrange(i.type.ndim)
+                                   for idx in range(i.type.ndim)
                                    if not i.type.broadcastable[idx] and
                                    not same_shape(i, cmp_op, idx, idx)]
                     if assert_cond:
@@ -1794,7 +1795,7 @@ def local_elemwise_alloc_op(ElemwiseOP, AllocOP, DimShuffleOP):
                     nb_dim_to_add = i.owner.inputs[0].ndim - alloc_input.ndim
                     alloc_input = alloc_input.dimshuffle(
                         ['x'] * nb_dim_to_add +
-                        range(alloc_input.ndim))
+                        list(range(alloc_input.ndim)))
 
                 # We need to keep the dimshuffle. It could swap axes or
                 # add dimensions anywhere.
@@ -1880,7 +1881,7 @@ def local_upcast_elemwise_constant_inputs(node):
                                 return
                             new_inputs.append(T.alloc(T.cast(cval_i,
                                                              output_dtype),
-                                *[shape_i(d)(i) for d in xrange(i.ndim)]))
+                                *[shape_i(d)(i) for d in range(i.ndim)]))
                             #print >> sys.stderr, "AAA",
                             #*[Shape_i(d)(i) for d in xrange(i.ndim)]
                     except NotScalarConstantError:
@@ -2111,8 +2112,8 @@ def local_useless_subtensor(node):
                 return False
         elif idx.owner is not None and isinstance(idx.owner.op, T.ARange):
             try:
-                start, stop, step = map(get_scalar_constant_value,
-                                        idx.owner.inputs)
+                start, stop, step = list(map(get_scalar_constant_value,
+                                        idx.owner.inputs))
             except NotScalarConstantError:
                 return False
 
@@ -2195,7 +2196,7 @@ def local_subtensor_lift(node):
                     j += 1
             # now keep the broadcastable pattern of all
             # items not appearing in subtensor list
-            for i in xrange(len(node.op.idx_list), len(u.broadcastable)):
+            for i in range(len(node.op.idx_list), len(u.broadcastable)):
                 new_axis += [(j, u.broadcastable[i])]
                 j += 1
 
@@ -2555,7 +2556,7 @@ def local_IncSubtensor_serialize(node):
         return i.owner \
                 and isinstance(i.owner.op, (IncSubtensor,
                                             AdvancedIncSubtensor1,
-                                            AdvancedIncSubtensor,
+                                            AdvancedIncSubtensor
                                         )) \
                 and i.type == o_type \
                 and len(i.clients) == 1 \
@@ -2750,14 +2751,14 @@ def local_useless_rebroadcast(node):
         else:
             # Keep the flags that modify something
             new_axis = {}
-            for dim, bc in node.op.axis.items():
+            for dim, bc in list(node.op.axis.items()):
                 if x.broadcastable[dim] != bc:
                     new_axis[dim] = bc
             if new_axis == node.op.axis:
                 # All flags are useful
                 return
             else:
-                return [T.Rebroadcast(*new_axis.items())(x)]
+                return [T.Rebroadcast(*list(new_axis.items()))(x)]
 
 
 @register_canonicalize
@@ -2783,7 +2784,7 @@ def local_rebroadcast_lift(node):
         # by the `unbroadcast` function before we are in the actual function
         # compilation phase.
         if hasattr(input, 'clients') and len(input.clients) == 1:
-            rval = inode.op.make_node(T.Rebroadcast(*op.axis.items())(
+            rval = inode.op.make_node(T.Rebroadcast(*list(op.axis.items()))(
                     inode.inputs[0])).outputs
             return rval
     if inode and isinstance(inode.op, T.Rebroadcast):
@@ -2792,7 +2793,7 @@ def local_rebroadcast_lift(node):
         axis = inode.op.axis.copy()
         axis.update(op.axis)
         iinput = inode.inputs[0]
-        rval = [T.Rebroadcast(*axis.items())(iinput)]
+        rval = [T.Rebroadcast(*list(axis.items()))(iinput)]
         return rval
 
 
@@ -2943,7 +2944,7 @@ def local_remove_switch_const_cond(node):
             if out.type.broadcastable != node.outputs[0].type.broadcastable:
                 # We need to copy data to the new dimensions during execution
                 out = T.alloc(out, *[node.outputs[0].shape[i] for i
-                                     in xrange(out.ndim)])
+                                     in range(out.ndim)])
             return [out]
 
         return False
@@ -3069,7 +3070,7 @@ def local_useless_tile(node):
                         # implement the opt and test it.
                         return
                         x_nd = node.inputs[0].ndim
-                        broad = ['x'] * (l - x_nd) + range(x_nd)
+                        broad = ['x'] * (l - x_nd) + list(range(x_nd))
                         return [node.inputs[0].dimshuffle(broad)]
                 except ValueError:
                     return
@@ -3183,10 +3184,10 @@ if 0:
             def tmp(thing):
                 try:
                     return T.get_scalar_constant_value(thing)
-                except (TypeError, ValueError), e:
-                    print e, thing.owner.inputs[0]
+                except (TypeError, ValueError) as e:
+                    print(e, thing.owner.inputs[0])
                     return None
-            print 'LOCAL SUM EMPTY', [tmp(s) for s in y_shape]
+            print('LOCAL SUM EMPTY', [tmp(s) for s in y_shape])
 
 ##################
 # Middleman cuts #
@@ -3444,8 +3445,8 @@ class Canonizer(gof.LocalOptimizer):
             # then num is concat(numx, numy, num...) and denum is
             # concat(denumx, denumy, denum...) note that main() can have any
             # number of arguments >= 0 concat is list concatenation
-            num = reduce(list.__iadd__, map(operator.itemgetter(0), pairs))
-            denum = reduce(list.__iadd__, map(operator.itemgetter(1), pairs))
+            num = reduce(list.__iadd__, list(map(operator.itemgetter(0), pairs)))
+            denum = reduce(list.__iadd__, list(map(operator.itemgetter(1), pairs)))
         elif parent.op == self.inverse:
             # If we have inverse(x, y), numx, denumx, numy and denumy
             # then num is concat(numx, denumy) and denum is
@@ -3791,7 +3792,7 @@ def local_sum_div_dimshuffle(node):
     if isinstance(node.op, T.Sum):
         axis = node.op.axis
         if axis is None:
-            axis = range(node.inputs[0].ndim)
+            axis = list(range(node.inputs[0].ndim))
         # print 'axis =', axis
         thing_summed = node.inputs[0]
         if thing_summed.owner and thing_summed.owner.op == T.true_div:
@@ -3918,13 +3919,13 @@ def local_sum_sum(node):
 
                 # The old bugged logic. We keep it there to generate a warning
                 # when we generated bad code.
-                alldims = range(summed.owner.inputs[0].type.ndim)
+                alldims = list(range(summed.owner.inputs[0].type.ndim))
                 alldims = [d for i, d in enumerate(alldims) if i
                            in summed.owner.op.axis]
                 alldims = [d for i, d in enumerate(alldims)
                            if i in node.op.axis]
                 newaxis_old = [i for i in
-                               xrange(summed.owner.inputs[0].type.ndim)
+                               range(summed.owner.inputs[0].type.ndim)
                                if i not in alldims]
 
                 if (theano.config.warn.sum_sum_bug and
@@ -4000,7 +4001,7 @@ def local_reduce_join(node):
 
         reduce_axis = node.op.axis
         if reduce_axis is None:
-            reduce_axis = tuple(xrange(node.inputs[0].ndim))
+            reduce_axis = tuple(range(node.inputs[0].ndim))
 
         # I put this warning late to don't add extra warning.
         if len(reduce_axis) != 1 or 0 not in reduce_axis:
@@ -4108,12 +4109,12 @@ def local_sum_alloc(node):
                     val = get_scalar_constant_value(input)
                     assert val.size == 1
                     val = val.reshape(1)[0]
-                    to_prod = [shapes[i] for i in xrange(len(shapes))
+                    to_prod = [shapes[i] for i in range(len(shapes))
                                if i in node.op.axis]
                     if to_prod:
                         val *= T.mul(*to_prod)
                     return [T.alloc(T.cast(val, dtype=node.outputs[0].dtype),
-                                    *[shapes[i] for i in xrange(len(shapes))
+                                    *[shapes[i] for i in range(len(shapes))
                                       if i not in node.op.axis])]
                 except NotScalarConstantError:
                     pass
@@ -4301,7 +4302,7 @@ def local_pow_specialize_device(node):
                 pow2 = [xsym]
                 pow2_scal = [theano.scalar.get_scalar_type(xsym.dtype)()]
                 y_to_do = abs(y)
-                for i in xrange(int(numpy.log2(y_to_do))):
+                for i in range(int(numpy.log2(y_to_do))):
                     pow2.append(T.sqr(pow2[i]))
                     pow2_scal.append(theano.scalar.sqr(pow2_scal[i]))
                 rval1 = None
@@ -4652,8 +4653,8 @@ def attempt_distribution(factor, num, denum, out_type):
     pos, neg = local_add_canonizer.get_num_denum(factor)
     if len(pos) == 1 and not neg:
         return False, factor, num, denum
-    pos_pairs = map(local_mul_canonizer.get_num_denum, pos)
-    neg_pairs = map(local_mul_canonizer.get_num_denum, neg)
+    pos_pairs = list(map(local_mul_canonizer.get_num_denum, pos))
+    neg_pairs = list(map(local_mul_canonizer.get_num_denum, neg))
     change = False
     for n in list(num):
         success, pos_pairs, neg_pairs = distribute_greedy(pos_pairs,
@@ -5079,7 +5080,7 @@ def local_grad_log_erfc_neg(node):
         mul_inputs = check_input(mul_neg.owner.inputs)
 
         # Put the constant first.
-        for i in xrange(len(mul_inputs)):
+        for i in range(len(mul_inputs)):
             if isinstance(i, Constant):
                 if i == 0:
                     break
@@ -5605,7 +5606,7 @@ class FusionOptimizer(Optimizer):
                         assert len(new_outputs) == len(node.outputs)
                         try:
                             fgraph.replace_all_validate(
-                                zip(node.outputs, new_outputs),
+                                list(zip(node.outputs, new_outputs)),
                                 reason=self.__class__.__name__)
                             did_something = True
                             nb_replacement += 1
@@ -5618,7 +5619,7 @@ class FusionOptimizer(Optimizer):
             validate_time = fgraph.profile.validate_time - validate_before
             callback_time = fgraph.execute_callbacks_time - callback_before
             callbacks_time = {}
-            for k, v in fgraph.execute_callbacks_times.iteritems():
+            for k, v in fgraph.execute_callbacks_times.items():
                 if k in callbacks_before:
                     callbacks_time[k] = v - callbacks_before[k]
                 else:
@@ -5635,18 +5636,18 @@ class FusionOptimizer(Optimizer):
     @staticmethod
     def print_profile(stream, prof, level=0):
         blanc = ('    ' * level)
-        print >> stream, blanc, "FusionOptimizer"
-        print >> stream, blanc, " nb_iter", prof[1]
-        print >> stream, blanc, " nb_replacement", prof[2]
-        print >> stream, blanc, " nb_inconsistency_replace", prof[3]
-        print >> stream, blanc, " validate_time", prof[4]
-        print >> stream, blanc, " callback_time", prof[5]
+        print(blanc, "FusionOptimizer", file=stream)
+        print(blanc, " nb_iter", prof[1], file=stream)
+        print(blanc, " nb_replacement", prof[2], file=stream)
+        print(blanc, " nb_inconsistency_replace", prof[3], file=stream)
+        print(blanc, " validate_time", prof[4], file=stream)
+        print(blanc, " callback_time", prof[5], file=stream)
         if prof[5] > 1:
-            print >> stream, blanc, " callbacks_time"
-            for i in sorted(prof[6].iteritems(), key=lambda a: a[1]):
+            print(blanc, " callbacks_time", file=stream)
+            for i in sorted(iter(prof[6].items()), key=lambda a: a[1]):
                 if i[1] > 0:
-                    print i
-        print >> stream, blanc, " time_toposort", prof[7]
+                    print(i)
+        print(blanc, " time_toposort", prof[7], file=stream)
 
 
 def local_add_mul_fusion(node):

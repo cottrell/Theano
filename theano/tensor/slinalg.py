@@ -112,24 +112,24 @@ class CholeskyGrad(Op):
         N = x.shape[0]
         if self.lower:
             F = numpy.tril(dz)
-            for k in xrange(N - 1, -1, -1):
-                for j in xrange(k + 1, N):
-                    for i in xrange(j, N):
+            for k in range(N - 1, -1, -1):
+                for j in range(k + 1, N):
+                    for i in range(j, N):
                         F[i, k] -= F[i, j] * L[j, k]
                         F[j, k] -= F[i, j] * L[i, k]
-                for j in xrange(k + 1, N):
+                for j in range(k + 1, N):
                     F[j, k] /= L[k, k]
                     F[k, k] -= L[j, k] * F[j, k]
                 F[k, k] /= (2 * L[k, k])
         else:
             F = numpy.triu(dz)
             M = N - 1
-            for k in xrange(N - 1, -1, -1):
-                for j in xrange(k + 1, N):
-                    for i in xrange(j, N):
+            for k in range(N - 1, -1, -1):
+                for j in range(k + 1, N):
+                    for i in range(j, N):
                         F[k, i] -= F[j, i] * L[k, j]
                         F[k, j] -= F[j, i] * L[k, i]
-                for j in xrange(k + 1, N):
+                for j in range(k + 1, N):
                     F[k, j] /= L[k, k]
                     F[k, k] -= L[k, j] * F[k, j]
                 F[k, k] /= (2 * L[k, k])
@@ -232,7 +232,8 @@ class Eigvalsh(Op):
             w = theano.tensor.vector(dtype=out_dtype)
             return Apply(self, [a, b], [w])
 
-    def perform(self, node, inputs, (w,)):
+    def perform(self, node, inputs, xxx_todo_changeme):
+        (w,) = xxx_todo_changeme
         if len(inputs) == 2:
             w[0] = scipy.linalg.eigvalsh(a=inputs[0], b=inputs[1], lower=self.lower)
         else:
@@ -288,7 +289,8 @@ class EigvalshGrad(Op):
         out2 = theano.tensor.matrix(dtype=out_dtype)
         return Apply(self, [a, b, gw], [out1, out2])
 
-    def perform(self, node, (a, b, gw), outputs):
+    def perform(self, node, xxx_todo_changeme1, outputs):
+        (a, b, gw) = xxx_todo_changeme1
         w, v = scipy.linalg.eigh(a, b, lower=self.lower)
         gA = v.dot(numpy.diag(gw).dot(v.T))
         gB = - v.dot(numpy.diag(gw*w).dot(v.T))
@@ -329,7 +331,7 @@ def kron(a, b):
     o = tensor.outer(a, b)
     o = o.reshape(tensor.concatenate((a.shape, b.shape)),
                   a.ndim + b.ndim)
-    shf = o.dimshuffle(0, 2, 1, * range(3, o.ndim))
+    shf = o.dimshuffle(0, 2, 1, * list(range(3, o.ndim)))
     if shf.ndim == 3:
         shf = o.dimshuffle(1, 0, 2)
         o = shf.flatten()
@@ -353,10 +355,14 @@ class Expm(Op):
         expm = theano.tensor.matrix(dtype=A.dtype)
         return Apply(self, [A, ], [expm, ])
 
-    def perform(self, node, (A,), (expm,)):
+    def perform(self, node, xxx_todo_changeme2, xxx_todo_changeme3):
+        (A,) = xxx_todo_changeme2
+        (expm,) = xxx_todo_changeme3
         expm[0] = scipy.linalg.expm(A)
 
-    def grad(self, (A,), (g_out,)):
+    def grad(self, xxx_todo_changeme4, xxx_todo_changeme5):
+        (A,) = xxx_todo_changeme4
+        (g_out,) = xxx_todo_changeme5
         return [ExpmGrad()(A, g_out)]
 
     def infer_shape(self, node, shapes):
@@ -378,10 +384,12 @@ class ExpmGrad(Op):
     def infer_shape(self, node, shapes):
         return [shapes[0]]
 
-    def perform(self, node, (A, gA), (out,)):
+    def perform(self, node, xxx_todo_changeme6, xxx_todo_changeme7):
         # Kalbfleisch and Lawless, J. Am. Stat. Assoc. 80 (1985) Equation 3.4
         # Kind of... You need to do some algebra from there to arrive at
         # this expression.
+        (A, gA) = xxx_todo_changeme6
+        (out,) = xxx_todo_changeme7
         w, V = scipy.linalg.eig(A, right=True)
         U = scipy.linalg.inv(V).T
 

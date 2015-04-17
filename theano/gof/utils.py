@@ -142,9 +142,9 @@ class scratchpad:
         return "scratchpad" + str(self.__dict__)
 
     def info(self):
-        print "<theano.gof.utils.scratchpad instance at %i>" % id(self)
-        for k, v in self.__dict__.items():
-            print "  %s: %s" % (k, v)
+        print("<theano.gof.utils.scratchpad instance at %i>" % id(self))
+        for k, v in list(self.__dict__.items()):
+            print("  %s: %s" % (k, v))
 
 
 class D:
@@ -189,8 +189,8 @@ def deprecated(filename, msg=''):
 
         def g(*args, **kwargs):
             if printme[0]:
-                print 'WARNING: %s.%s deprecated. %s'\
-                        % (filename, f.__name__, msg)
+                print('WARNING: %s.%s deprecated. %s'\
+                        % (filename, f.__name__, msg))
                 printme[0] = False
             return f(*args, **kwargs)
         return g
@@ -219,7 +219,7 @@ def difference(seq1, seq2):
             raise Exception('not worth it')
         set2 = set(seq2)
         return [x for x in seq1 if x not in set2]
-    except Exception, e:
+    except Exception as e:
         # maybe a seq2 element is not hashable
         # maybe seq2 is too short
         # -> use O(len(seq1) * len(seq2)) algo
@@ -257,7 +257,7 @@ def toposort(prereqs_d):
     seq = []
     done = set()
     postreqs_d = {}
-    for x, prereqs in prereqs_d.items():
+    for x, prereqs in list(prereqs_d.items()):
         for prereq in prereqs:
             postreqs_d.setdefault(prereq, set()).add(x)
     next = set([k for k in prereqs_d if not prereqs_d[k]])
@@ -284,7 +284,7 @@ class Keyword:
         self.name = name
         self.nonzero = nonzero
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.nonzero
 
     def __str__(self):
@@ -307,7 +307,7 @@ FALL_THROUGH = Keyword("FALL_THROUGH")
 
 def comm_guard(type1, type2):
     def wrap(f):
-        old_f = f.func_globals[f.__name__]
+        old_f = f.__globals__[f.__name__]
 
         def new_f(arg1, arg2, *rest):
             if (type1 is ANY_TYPE or isinstance(arg1, type1)) \
@@ -345,7 +345,7 @@ def comm_guard(type1, type2):
 
 def type_guard(type1):
     def wrap(f):
-        old_f = f.func_globals[f.__name__]
+        old_f = f.__globals__[f.__name__]
 
         def new_f(arg1, *rest):
             if (type1 is ANY_TYPE or isinstance(arg1, type1)):
@@ -403,14 +403,14 @@ def give_variables_names(variables):
     """ Gives unique names to an iterable of variables. Modifies input.
 
     This function is idempotent."""
-    names = map(lambda var: var.name, variables)
+    names = [var.name for var in variables]
     h = hist(names)
     bad_var = lambda var: not var.name or h[var.name] > 1
 
     for i, var in enumerate(filter(bad_var, variables)):
         var.name = (var.name or "") + "_%d" % i
 
-    if not unique(map(str, variables)):
+    if not unique(list(map(str, variables))):
         raise ValueError("Not all variables have unique names."
                 "Maybe you've named some of the variables identically")
 
@@ -426,4 +426,4 @@ def remove(predicate, coll):
     >>> remove(even, [1, 2, 3, 4])
     [1, 3]
     """
-    return filter(lambda x: not predicate(x), coll)
+    return [x for x in coll if not predicate(x)]

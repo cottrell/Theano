@@ -1,4 +1,5 @@
 import logging
+from functools import reduce
 _logger = logging.getLogger('theano.sandbox.cuda.opt')
 
 import copy
@@ -754,7 +755,7 @@ def local_gpu_careduce(node):
 
                     new_in_shp = [x_shape[0]]
                     new_mask = [reduce_mask[0]]
-                    for i in xrange(1, x.type.ndim):
+                    for i in range(1, x.type.ndim):
                         if reduce_mask[i] == reduce_mask[i - 1]:
                             new_in_shp[-1] *= x_shape[i]
                         else:
@@ -791,12 +792,12 @@ def local_gpu_careduce(node):
                             # We should not loose the information
                             # that one dimensions was
                             # broadcastable.
-                            print >> sys.stderr, (
+                            print((
                                 "WARNING: local_gpu_careduce got type"
                                 " wrong",
                                 rval.type, out.type,
                                 node.inputs[0].type, x.type,
-                                node)
+                                node), file=sys.stderr)
                             return None
                     rval = tensor.patternbroadcast(rval,
                                                    out.broadcastable)
@@ -1807,7 +1808,7 @@ def get_device_type_sizes():
         assert int_size == gpu_int_size, (int_size, gpu_int_size)
         del gpu_int_size
         del t
-    except Exception, e:
+    except Exception as e:
         _logger.warning(("Optimization Warning: "
             "Got the following error, but you can ignore it. "
             "This could cause less GpuElemwise fused together.\n"
@@ -1873,7 +1874,7 @@ def split_huge_add_or_mul(node):
             return False
         while len(node.inputs) > max_nb_inputs:
             inner_op = []
-            for i in xrange(0,
+            for i in range(0,
                             len(node.inputs),
                             max_nb_inputs):
                 inner_op.append(node.op(*node.inputs[i: i + max_nb_inputs]))
@@ -2155,8 +2156,8 @@ def gpuScanOptimization(node):
             scan_outs = [safe_to_gpu(x) for x in thescan.outputs]
             scan_outs = scan_utils.clone(
                 scan_outs,
-                replace=zip(thescan.inputs,
-                            [safe_to_cpu(x) for x in scan_ins]))
+                replace=list(zip(thescan.inputs,
+                            [safe_to_cpu(x) for x in scan_ins])))
             # We need to construct the hash here, because scan
             # __init__ does not know about cuda ndarray and can not
             # handle graphs with inputs being Cuda Ndarrays
@@ -2201,8 +2202,8 @@ def gpuScanOptimization(node):
             scan_outs = [safe_to_gpu(x) for x in thescan.outputs]
             scan_outs = scan_utils.clone(
                 scan_outs,
-                replace=zip(thescan.inputs,
-                            [safe_to_cpu(x) for x in scan_ins]))
+                replace=list(zip(thescan.inputs,
+                            [safe_to_cpu(x) for x in scan_ins])))
 
             # We need to construct the hash here, because scan
             # __init__ does not know about cuda ndarray and can not

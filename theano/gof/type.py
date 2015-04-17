@@ -527,10 +527,10 @@ class CDataType(Type):
                          function must have a `void` return and take a
                          single pointer argument.
         """
-        assert isinstance(ctype, basestring)
+        assert isinstance(ctype, str)
         self.ctype = ctype
         if freefunc is not None:
-            assert isinstance(freefunc, basestring)
+            assert isinstance(freefunc, str)
         self.freefunc = freefunc
 
     def __eq__(self, other):

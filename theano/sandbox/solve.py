@@ -38,7 +38,7 @@ class Solve(gof.Op):
         output, = out
         ret = scipy.linalg.solve(A, b)
         if ret.dtype != node.outputs[0].dtype:
-            print >> sys.stderr, "WARNING: Solve.perform() required cast."
+            print("WARNING: Solve.perform() required cast.", file=sys.stderr)
             ret = theano._asarray(ret, dtype=node.outputs[0].dtype)
         output[0] = ret
 
@@ -57,7 +57,7 @@ class T_solve(unittest.TestCase):
 
     def test0(self):
         A = self.rng.randn(5, 5)
-        b = numpy.array(range(5), dtype=float)
+        b = numpy.array(list(range(5)), dtype=float)
         x = scipy.linalg.solve(A, b)
         Ax = numpy.dot(A, x)
         are = tensor.numeric_grad.abs_rel_err(Ax, b)

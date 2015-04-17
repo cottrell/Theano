@@ -181,7 +181,7 @@ class PrintCurrentFunctionGraph(gof.Optimizer):
 
     def apply(self, fgraph):
         import theano.printing
-        print "PrintCurrentFunctionGraph:", self.header
+        print("PrintCurrentFunctionGraph:", self.header)
         theano.printing.debugprint(fgraph.outputs)
 
 
@@ -272,10 +272,10 @@ class Mode(object):
         linker, optimizer = state
         self.provided_linker = linker
         self.provided_optimizer = optimizer
-        if isinstance(linker, basestring) or linker is None:
+        if isinstance(linker, str) or linker is None:
             linker = predefined_linkers[linker]
         self.linker = linker
-        if isinstance(optimizer, basestring) or optimizer is None:
+        if isinstance(optimizer, str) or optimizer is None:
             optimizer = predefined_optimizers[optimizer]
         if isinstance(optimizer, gof.Query):
             self.provided_optimizer = optimizer
@@ -297,9 +297,9 @@ class Mode(object):
     optimizer = property(__get_optimizer)
 
     def get_linker_optimizer(self, linker, optimizer):
-        if isinstance(linker, basestring) or linker is None:
+        if isinstance(linker, str) or linker is None:
             linker = predefined_linkers[linker]
-        if isinstance(optimizer, basestring) or optimizer is None:
+        if isinstance(optimizer, str) or optimizer is None:
             optimizer = predefined_optimizers[optimizer]
         return (linker, optimizer)
 
@@ -341,7 +341,7 @@ def get_mode(orig_string):
         string = config.mode
     else:
         string = orig_string
-    if not isinstance(string, basestring):
+    if not isinstance(string, str):
         return string  # it is hopefully already a mode...
 
     global instanciated_default_mode
@@ -359,12 +359,12 @@ def get_mode(orig_string):
     if string in ['Mode', 'ProfileMode', 'DebugMode']:
         if string == 'DebugMode':
             # need to import later to break circular dependency.
-            from debugmode import DebugMode
+            from .debugmode import DebugMode
             # DebugMode use its own linker.
             ret = DebugMode(optimizer=config.optimizer)
         else:
             # The import is needed in case string is ProfileMode
-            from profilemode import ProfileMode, prof_mode_instance_to_print
+            from .profilemode import ProfileMode, prof_mode_instance_to_print
             ret = eval(string
                     + '(linker=config.linker, optimizer=config.optimizer)')
     elif string in predefined_modes:

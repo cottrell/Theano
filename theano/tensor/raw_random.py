@@ -11,6 +11,7 @@ from theano import tensor
 from theano.tensor import opt
 from theano import gof
 from theano.compile import optdb
+from functools import reduce
 
 
 class RandomStateType(gof.Type):
@@ -142,7 +143,7 @@ class RandomFunction(gof.Op):
     def __setstate__(self, state):
         self.state = state
         fn, outtype, inplace, ndim_added = state
-        if isinstance(fn, basestring):
+        if isinstance(fn, str):
             self.fn = getattr(numpy.random.RandomState, fn)
         else:
             self.fn = fn
@@ -191,7 +192,7 @@ class RandomFunction(gof.Op):
         assert shape.type.ndim == 1
         assert (shape.type.dtype == 'int64') or (shape.type.dtype == 'int32')
         if not isinstance(r.type, RandomStateType):
-            print >> sys.stderr, 'WARNING: RandomState instances should be in RandomStateType'
+            print('WARNING: RandomState instances should be in RandomStateType', file=sys.stderr)
             if 0:
                 raise TypeError('r must be RandomStateType instance', r)
         # the following doesn't work because we want to ignore the
@@ -200,7 +201,7 @@ class RandomFunction(gof.Op):
 
         # convert args to TensorType instances
         # and append enough None's to match the length of self.args
-        args = map(tensor.as_tensor_variable, args)
+        args = list(map(tensor.as_tensor_variable, args))
 
         return gof.Apply(self,
                          [r, shape] + args,
@@ -221,7 +222,7 @@ class RandomFunction(gof.Op):
             # Use the default infer_shape implementation.
             raise tensor.ShapeError()
 
-        return [None, [sample_shp[i] for i in xrange(node.outputs[1].ndim)]]
+        return [None, [sample_shp[i] for i in range(node.outputs[1].ndim)]]
 
     def perform(self, node, inputs, out_):
         rout, out = out_
@@ -411,11 +412,11 @@ def _generate_broadcasting_indices(out_shape, *shapes):
     # Will contain the return value: a list of indices for each argument
     ret_indices = [[()] for shape in all_shapes]
 
-    for dim in xrange(len(out_shape)):
+    for dim in range(len(out_shape)):
         # Temporary list to generate the indices
         _ret_indices = [[] for shape in all_shapes]
 
-        out_range = range(out_shape[dim])
+        out_range = list(range(out_shape[dim]))
 
         # Verify the shapes are compatible along that dimension
         # and generate the appropriate range: out_range, or [0, ..., 0]
@@ -434,7 +435,7 @@ def _generate_broadcasting_indices(out_shape, *shapes):
 
         for prev_index in zip(*ret_indices):
             for dim_index in zip(*ranges):
-                for i in xrange(len(all_shapes)):
+                for i in range(len(all_shapes)):
                     _ret_indices[i].append(prev_index[i] + (dim_index[i],))
         ret_indices = _ret_indices
 
@@ -502,7 +503,7 @@ def binomial(random_state, size=None, n=1, p=0.5, ndim=None,
     """
     if prob is not None:
         p = prob
-        print >> sys.stderr, "DEPRECATION WARNING: the parameter prob to the binomal fct have been renamed to p to have the same name as numpy."
+        print("DEPRECATION WARNING: the parameter prob to the binomal fct have been renamed to p to have the same name as numpy.", file=sys.stderr)
     n = tensor.as_tensor_variable(n)
     p = tensor.as_tensor_variable(p)
     ndim, size, bcast = _infer_ndim_bcast(ndim, size, n, p)
@@ -550,7 +551,7 @@ def random_integers_helper(random_state, low, high, size):
         out_size = tuple(size)
     else:
         out_size = ()
-        for dim in xrange(out_ndim):
+        for dim in range(out_ndim):
             dim_len = max(low.shape[dim], high.shape[dim])
             out_size = out_size + (dim_len,)
 
@@ -758,7 +759,7 @@ def multinomial_helper(random_state, n, pvals, size):
         size = tuple(size)
     else:
         size = ()
-        for dim in xrange(ndim):
+        for dim in range(ndim):
             dim_len = max(n.shape[dim], pvals.shape[dim])
             size = size + (dim_len,)
     out_size = size + (pvals.shape[-1],)
@@ -889,7 +890,7 @@ class RandomStreamsBase(object):
         """
         if prob is not None:
             p = prob
-            print >> sys.stderr, "DEPRECATION WARNING: the parameter prob to the binomal fct have been renamed to p to have the same name as numpy."
+            print("DEPRECATION WARNING: the parameter prob to the binomal fct have been renamed to p to have the same name as numpy.", file=sys.stderr)
         return self.gen(binomial, size, n, p, ndim=ndim, dtype=dtype)
 
     def uniform(self, size=None, low=0.0, high=1.0, ndim=None, dtype=None):

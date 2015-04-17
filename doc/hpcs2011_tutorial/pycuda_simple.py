@@ -22,4 +22,4 @@ multiply_them(
         block=(400,1,1), grid=(1,1))
 
 assert numpy.allclose(dest, a*b)
-print dest
+print(dest)

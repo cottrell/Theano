@@ -5,7 +5,7 @@ import time
 import sys
 import unittest
 
-import cPickle
+import pickle
 import numpy
 from numpy.testing import dec
 
@@ -17,7 +17,7 @@ from theano.compat.python2x import any
 from theano.tests  import unittest_tools as utt
 from numpy.testing.noseclasses import KnownFailureTest
 
-from test_utils import *
+from .test_utils import *
 import theano.sandbox.scan_module as scan_module
 from theano.sandbox.scan_module.scan_op import ScanOp
 
@@ -60,7 +60,7 @@ class TestScan(unittest.TestCase):
 
         rng = numpy.random.RandomState(utt.fetch_seed())
         n_ins = len(inputs_info)
-        inputs = [tensor.matrix('u%d' % k) for k in xrange(n_ins)]
+        inputs = [tensor.matrix('u%d' % k) for k in range(n_ins)]
         scan_inputs = []
         for inp, info in zip(inputs, inputs_info):
             scan_inputs.append(dict(input=inp, taps=[x['tap'] for x in
@@ -79,11 +79,11 @@ class TestScan(unittest.TestCase):
                 scan_states.append(
                     dict(initial=state, taps=[x['tap'] for x in info]))
         n_parameters = len(parameters_info)
-        parameters = [tensor.vector('p%d' % k) for k in xrange(n_parameters)]
+        parameters = [tensor.vector('p%d' % k) for k in range(n_parameters)]
         original_shared_values = []
         shared_vars = []
 
-        for k in xrange(n_shared_updates):
+        for k in range(n_shared_updates):
             data = rng.uniform(size=(4,)).astype(theano.config.floatX)
             original_shared_values.append(data)
             shared_vars.append(theano.shared(data, name='z%d' % k))
@@ -131,13 +131,13 @@ class TestScan(unittest.TestCase):
                     else:
                         rval.append(arg + to_add)
                 states_out = rval
-                pure_outs = [to_add ** 2 for x in xrange(n_outputs)]
+                pure_outs = [to_add ** 2 for x in range(n_outputs)]
             else:
                 shared_outs = [sh * 5 for sh in shared_vars]
                 states_out = [x for x in states_out]
-                pure_outs = [2 for x in xrange(n_outputs)]
-            return states_out + pure_outs, dict(zip(shared_vars,
-                                                    shared_outs))
+                pure_outs = [2 for x in range(n_outputs)]
+            return states_out + pure_outs, dict(list(zip(shared_vars,
+                                                    shared_outs)))
 
         def execute_inner_graph(*args):
             """
@@ -186,10 +186,10 @@ class TestScan(unittest.TestCase):
 
             parameters_vals = args[2 + n_ins + n_states:]
             out_mem_buffers = [numpy.zeros((nsteps, 4)) for k in
-                               xrange(n_outputs)]
+                               range(n_outputs)]
             shared_values = [x.copy() for x in original_shared_values]
 
-            for step in xrange(nsteps):
+            for step in range(nsteps):
                 arg_pos = 0
                 to_add = None
                 for in_info in inputs_info:
@@ -250,10 +250,10 @@ class TestScan(unittest.TestCase):
                     all_nodes = my_f.maker.fgraph.toposort()
                     assert len([x for x in all_nodes
                                 if isinstance(x.op, ScanOp)]) == 0
-                print >>sys.stderr, '   n_steps', n_steps
-                print >>sys.stderr, '   go_backwards', go_backwards
+                print('   n_steps', n_steps, file=sys.stderr)
+                print('   go_backwards', go_backwards, file=sys.stderr)
 
-                print >>sys.stderr, '       Scenario 1. Correct shape'
+                print('       Scenario 1. Correct shape', file=sys.stderr)
                 if n_steps is not None:
                     _n_steps = n_steps
                 else:
@@ -281,9 +281,9 @@ class TestScan(unittest.TestCase):
                         data = numpy.arange(4)
                     state_values.append(data)
                 param_values = [rng.uniform(size=(4,)) for k in
-                                xrange(n_parameters)]
+                                range(n_parameters)]
                 param_values = [numpy.arange(4) for k in
-                                xrange(n_parameters)]
+                                range(n_parameters)]
                 for var, val in zip(shared_vars, original_shared_values):
                     var.set_value(val)
                 theano_outs = my_f(*(input_values + state_values +
@@ -309,7 +309,7 @@ class TestScan(unittest.TestCase):
                         #import ipdb; ipdb.set_trace()
                         raise
                 # Scenario 2 : Loose fit (sequences longer then required)
-                print >>sys.stderr, '       Scenario 2. Loose shapes'
+                print('       Scenario 2. Loose shapes', file=sys.stderr)
                 input_values = []
                 for pos, info in enumerate(inputs_info):
                     taps = [x['tap'] for x in info]
@@ -336,7 +336,7 @@ class TestScan(unittest.TestCase):
                         data = rng.uniform(size=(4,))
                     state_values.append(data)
                 param_values = [rng.uniform(size=(4,)) for k in
-                                xrange(n_parameters)]
+                                range(n_parameters)]
                 for var, val in zip(shared_vars, original_shared_values):
                     var.set_value(val)
                 theano_outs = my_f(*(input_values + state_values +
@@ -355,7 +355,7 @@ class TestScan(unittest.TestCase):
                 for th_out, num_out in zip(shared_vars, numpy_shared):
                     assert numpy.allclose(th_out.get_value(), num_out)
                 # Scenario 3 : Less data then required
-                print >>sys.stderr, '       Scenario 2. Wrong shapes'
+                print('       Scenario 2. Wrong shapes', file=sys.stderr)
                 input_values = []
                 for pos, info in enumerate(inputs_info):
                     taps = [x['tap'] for x in info]
@@ -373,7 +373,7 @@ class TestScan(unittest.TestCase):
                     data = rng.uniform(size=(offset - 1, 4))
                     state_values.append(data)
                 param_values = [rng.uniform(size=(4,)) for k in
-                                xrange(n_parameters)]
+                                range(n_parameters)]
                 for var, val in zip(shared_vars, original_shared_values):
                     var.set_value(val)
                 self.assertRaises(Exception, my_f,
@@ -405,9 +405,9 @@ class TestScan(unittest.TestCase):
         test_nb = 0
         for n_ins in [1, 2]:
             # Randomly pick up 4*n_ins combinations of arguments
-            for k in xrange(4 * n_ins):
+            for k in range(4 * n_ins):
                 inp = []
-                for inp_nb in xrange(n_ins):
+                for inp_nb in range(n_ins):
 
                     pos = rng.randint(len(possible_taps_use_pairs))
                     inp.append(possible_taps_use_pairs[pos])
@@ -429,9 +429,9 @@ class TestScan(unittest.TestCase):
                                         dict(tap=-2, use=True)]]
         for n_ins in [1, 2]:
             # Randomly pick up 4*n_ins combinations of arguments
-            for k in xrange(4 * n_ins):
+            for k in range(4 * n_ins):
                 state = []
-                for state_nb in xrange(n_ins):
+                for state_nb in range(n_ins):
                     pos = rng.randint(len(possible_taps_use_pairs))
                     state.append(possible_taps_use_pairs[pos])
                 all_states_info.append(state)
@@ -447,18 +447,18 @@ class TestScan(unittest.TestCase):
         return
         for n_outputs in [0, 1, 2]:
             for n_shared_updates in [0, 1, 2]:
-                for n_random_combinations in xrange(1):
+                for n_random_combinations in range(1):
                     pos_inp = rng.randint(len(all_inputs_info))
                     pos_st = rng.randint(len(all_states_info))
                     pos_param = rng.randint(len(all_parameters_info))
-                    print >>sys.stderr
-                    print >>sys.stderr, 'Test nb', test_nb
-                    print >>sys.stderr, ' inputs', all_inputs_info[pos_inp]
-                    print >>sys.stderr, ' states', all_states_info[pos_st]
-                    print >>sys.stderr, ' parameters', \
-                            all_parameters_info[pos_param]
-                    print >>sys.stderr, ' n_outputs', n_outputs
-                    print >>sys.stderr, ' n_shared_updates', n_shared_updates
+                    print(file=sys.stderr)
+                    print('Test nb', test_nb, file=sys.stderr)
+                    print(' inputs', all_inputs_info[pos_inp], file=sys.stderr)
+                    print(' states', all_states_info[pos_st], file=sys.stderr)
+                    print(' parameters', \
+                            all_parameters_info[pos_param], file=sys.stderr)
+                    print(' n_outputs', n_outputs, file=sys.stderr)
+                    print(' n_shared_updates', n_shared_updates, file=sys.stderr)
                     test_nb += 1
                     self.new_run(inputs_info=all_inputs_info[pos_inp],
                              states_info=all_states_info[pos_st],
@@ -497,7 +497,7 @@ class TestScan(unittest.TestCase):
             rng = numpy.random.RandomState(utt.fetch_seed())
             state = rng.uniform()
             numpy_values = numpy.array([state * (2 ** (k + 1)) for k
-                                        in xrange(abs(n_steps))])
+                                        in range(abs(n_steps))])
             theano_values = my_f(state)
             assert numpy.allclose(numpy_values, theano_values)
 
@@ -553,7 +553,7 @@ class TestScan(unittest.TestCase):
         v_out = numpy.zeros((8,))
         v_out[0] = _v_u[0] * W_in + v_x0 * W
 
-        for step in xrange(1, steps):
+        for step in range(1, steps):
             v_out[step] = _v_u[step] * W_in + v_out[step - 1] * W
         v_out = v_out[:steps]
         theano_values = my_f(v_u, v_x0, W_in, W)

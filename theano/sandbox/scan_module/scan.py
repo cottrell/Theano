@@ -42,7 +42,7 @@ __copyright__ = "(c) 2010, Universite de Montreal"
 __contact__ = "Razvan Pascanu <r.pascanu@gmail>"
 
 
-from itertools import izip
+
 import logging
 import numpy
 
@@ -53,8 +53,8 @@ from theano import tensor
 from theano.scalar.sharedvar import shared as scalar_shared
 from theano.compile.pfunc import rebuild_collect_shared
 
-import scan_op
-import scan_utils
+from . import scan_op
+from . import scan_utils
 
 # Logging function for sending warning or info
 _logger = logging.getLogger('theano.scan_module.scan')
@@ -519,17 +519,17 @@ def scan(fn,
     scan_outputs_update_rules = scan_utils.to_list(local_op(*scan_inputs))
     # 5.5 Collect outputs and add permutation object
     scan_outputs = []
-    for pos in xrange(len(states_and_outputs)):
+    for pos in range(len(states_and_outputs)):
         out = scan_utils.ScanPermutation(mintaps[pos])(
             scan_outputs_update_rules[pos], t)
         scan_outputs.append(out[mintaps[pos]:])
     # 5.6 Construct updates dictionary
     update_rules = scan_outputs_update_rules[len(states_and_outputs):]
     updates = {}
-    for v, u in izip(original_numeric_shared_variables,
+    for v, u in zip(original_numeric_shared_variables,
                      update_rules[:len(additional_input_states)]):
         updates[v] = u[-1]
-    for v, u in izip(original_non_numeric_shared_variables,
+    for v, u in zip(original_non_numeric_shared_variables,
                      update_rules[len(additional_input_states):]):
         updates[v] = u
     # Step 5.7 We are done and can return everything back to the user

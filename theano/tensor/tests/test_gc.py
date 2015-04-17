@@ -1,4 +1,4 @@
-import cPickle
+import pickle
 import sys
 import numpy
 import theano
@@ -25,7 +25,7 @@ def test_gc_never_pickles_temporaries():
     x = T.dvector()
 
     #print >> sys.stderr, 'BUILDING GRAPH'
-    for i in xrange(2):  # TODO: 30 causes like LONG compilation due to MERGE
+    for i in range(2):  # TODO: 30 causes like LONG compilation due to MERGE
         if i:
             r = r + r/10
         else:
@@ -50,8 +50,8 @@ def test_gc_never_pickles_temporaries():
         g = theano.function([x], r, mode=theano.Mode(optimizer=optimizer,
                                                      linker=g_linker))
 
-        len_pre_f = len(cPickle.dumps(f))
-        len_pre_g = len(cPickle.dumps(g))
+        len_pre_f = len(pickle.dumps(f))
+        len_pre_g = len(pickle.dumps(g))
 
         # We can't compare the content or the length of the string
         # between f and g. 2 reason, we store some timming information
@@ -59,19 +59,19 @@ def test_gc_never_pickles_temporaries():
         # can have different lenght when printed.
 
         def a(fn):
-            return len(cPickle.dumps(fn.maker))
+            return len(pickle.dumps(fn.maker))
         assert a(f) == a(f)  # some sanity checks on the pickling mechanism
         assert a(g) == a(g)  # some sanity checks on the pickling mechanism
 
         def b(fn):
             return len(
-                cPickle.dumps(
+                pickle.dumps(
                     theano.compile.function_module._pickle_Function(
                         fn)))
         assert b(f) == b(f)  # some sanity checks on the pickling mechanism
 
         def c(fn):
-            return len(cPickle.dumps(fn))
+            return len(pickle.dumps(fn))
         assert c(f) == c(f)  # some sanity checks on the pickling mechanism
         assert c(g) == c(g)  # some sanity checks on the pickling mechanism
 
@@ -81,8 +81,8 @@ def test_gc_never_pickles_temporaries():
         g(numpy.ones(100, dtype='float64'))
 
         # serialize the functions again
-        post_f = cPickle.dumps(f)
-        post_g = cPickle.dumps(g)
+        post_f = pickle.dumps(f)
+        post_g = pickle.dumps(g)
         len_post_f = len(post_f)
         len_post_g = len(post_g)
 
@@ -107,7 +107,7 @@ def test_merge_opt_runtime():
 
     """
     x = T.dvector()
-    for i in xrange(50):
+    for i in range(50):
         if i:
             r = r + r/10
         else:

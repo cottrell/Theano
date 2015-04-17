@@ -2,7 +2,7 @@ import copy
 
 import numpy
 
-from type import TypedListType
+from .type import TypedListType
 import theano
 from theano.gof import Apply, Constant, Op, Variable
 from theano.tensor.type_other import SliceType
@@ -80,7 +80,9 @@ class GetItem(Op):
         else:
             raise TypeError('Expected scalar or slice as index.')
 
-    def perform(self, node, (x, index), (out, )):
+    def perform(self, node, xxx_todo_changeme, xxx_todo_changeme1):
+        (x, index) = xxx_todo_changeme
+        (out, ) = xxx_todo_changeme1
         if not isinstance(index, slice):
             index = int(index)
         out[0] = x[index]
@@ -137,7 +139,9 @@ class Append(Op):
         assert x.ttype == toAppend.type, (x.ttype, toAppend.type)
         return Apply(self, [x, toAppend], [x.type()])
 
-    def perform(self, node, (x, toAppend), (out, )):
+    def perform(self, node, xxx_todo_changeme2, xxx_todo_changeme3):
+        (x, toAppend) = xxx_todo_changeme2
+        (out, ) = xxx_todo_changeme3
         if not self.inplace:
             out[0] = list(x)
         else:
@@ -209,7 +213,9 @@ class Extend(Op):
         assert x.type == toAppend.type
         return Apply(self, [x, toAppend], [x.type()])
 
-    def perform(self, node, (x, toAppend), (out, )):
+    def perform(self, node, xxx_todo_changeme4, xxx_todo_changeme5):
+        (x, toAppend) = xxx_todo_changeme4
+        (out, ) = xxx_todo_changeme5
         if not self.inplace:
             out[0] = list(x)
         else:
@@ -292,7 +298,9 @@ class Insert(Op):
             assert isinstance(index, T.TensorVariable) and index.ndim == 0
         return Apply(self, [x, index, toInsert], [x.type()])
 
-    def perform(self, node, (x, index, toInsert), (out, )):
+    def perform(self, node, xxx_todo_changeme6, xxx_todo_changeme7):
+        (x, index, toInsert) = xxx_todo_changeme6
+        (out, ) = xxx_todo_changeme7
         if not self.inplace:
             out[0] = list(x)
         else:
@@ -360,8 +368,10 @@ class Remove(Op):
         assert x.ttype == toRemove.type
         return Apply(self, [x, toRemove], [x.type()])
 
-    def perform(self, node, (x, toRemove), (out, )):
+    def perform(self, node, xxx_todo_changeme8, xxx_todo_changeme9):
 
+        (x, toRemove) = xxx_todo_changeme8
+        (out, ) = xxx_todo_changeme9
         if not self.inplace:
             out[0] = list(x)
         else:
@@ -413,8 +423,9 @@ class Reverse(Op):
         assert isinstance(x.type, TypedListType)
         return Apply(self, [x], [x.type()])
 
-    def perform(self, node, inp, (out, )):
+    def perform(self, node, inp, xxx_todo_changeme10):
 
+        (out, ) = xxx_todo_changeme10
         if not self.inplace:
             out[0] = list(inp[0])
         else:
@@ -470,12 +481,14 @@ class Index(Op):
         assert x.ttype == elem.type
         return Apply(self, [x, elem], [T.scalar()])
 
-    def perform(self, node, (x, elem), (out, )):
+    def perform(self, node, xxx_todo_changeme11, xxx_todo_changeme12):
         """
         inelegant workaround for ValueError: The truth value of an
         array with more than one element is ambiguous. Use a.any() or a.all()
         being thrown when trying to remove a matrix from a matrices list
         """
+        (x, elem) = xxx_todo_changeme11
+        (out, ) = xxx_todo_changeme12
         for y in range(len(x)):
             if node.inputs[0].ttype.values_eq(x[y], elem):
                 out[0] = numpy.asarray(y, dtype=theano.config.floatX)
@@ -500,12 +513,14 @@ class Count(Op):
         assert x.ttype == elem.type
         return Apply(self, [x, elem], [T.scalar()])
 
-    def perform(self, node, (x, elem), (out, )):
+    def perform(self, node, xxx_todo_changeme13, xxx_todo_changeme14):
         """
         inelegant workaround for ValueError: The truth value of an
         array with more than one element is ambiguous. Use a.any() or a.all()
         being thrown when trying to remove a matrix from a matrices list
         """
+        (x, elem) = xxx_todo_changeme13
+        (out, ) = xxx_todo_changeme14
         out[0] = 0
         for y in range(len(x)):
             if node.inputs[0].ttype.values_eq(x[y], elem):
@@ -543,7 +558,8 @@ class Length(Op):
         assert isinstance(x.type, TypedListType)
         return Apply(self, [x], [T.scalar(dtype='int64')])
 
-    def perform(self, node, x, (out, )):
+    def perform(self, node, x, xxx_todo_changeme15):
+        (out, ) = xxx_todo_changeme15
         out[0] = numpy.asarray(len(x[0]), 'int64')
 
     def __str__(self):
@@ -593,7 +609,8 @@ class MakeList(Op):
 
         return Apply(self, a2, [tl])
 
-    def perform(self, node, inputs, (out, )):
+    def perform(self, node, inputs, xxx_todo_changeme16):
+        (out, ) = xxx_todo_changeme16
         out[0] = list(inputs)
 
 make_list = MakeList()

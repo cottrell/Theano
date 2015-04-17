@@ -1,6 +1,7 @@
 """Driver for gradient calculations."""
-import __builtin__
-from itertools import izip
+import builtins
+from functools import reduce
+
 import logging
 import time
 import warnings
@@ -342,7 +343,7 @@ def Lop(f, wrt, eval_points, consider_constant=None,
         wrt = [wrt]
 
     assert len(f) == len(grads)
-    known = dict(izip(f, grads))
+    known = dict(zip(f, grads))
 
     ret = grad(cost=None, known_grads=known,
                consider_constant=consider_constant, wrt=wrt,
@@ -449,7 +450,7 @@ def grad(cost, wrt, consider_constant=None,
     if cost is not None:
         outputs.append(cost)
     if known_grads is not None:
-        outputs.extend(known_grads.keys())
+        outputs.extend(list(known_grads.keys()))
 
     var_to_app_to_idx = _populate_var_to_app_to_idx(
         outputs, wrt, consider_constant)
@@ -544,7 +545,7 @@ def grad(cost, wrt, consider_constant=None,
     rval = _populate_grad_dict(var_to_app_to_idx,
                                grad_dict, wrt, cost_name)
 
-    for i in xrange(len(rval)):
+    for i in range(len(rval)):
         if isinstance(rval[i].type, DisconnectedType):
             handle_disconnected(rval[i])
             if return_disconnected == 'zero':
@@ -698,7 +699,7 @@ def subgraph_grad(wrt, end, start=None, cost=None, details=False):
             for i in range(len(grads)):
                 grads[i] += cost_grads[i]
 
-    pgrads = OrderedDict(zip(params, grads))
+    pgrads = OrderedDict(list(zip(params, grads)))
     # separate wrt from end grads:
     wrt_grads = list(pgrads[k] for k in wrt)
     end_grads = list(pgrads[k] for k in end)
@@ -742,7 +743,7 @@ def _node_to_pattern(node):
                               for ipt in node.inputs]
     assert isinstance(connection_pattern, list)
     assert len(connection_pattern) == len(node.inputs)
-    for ii in xrange(len(node.inputs)):
+    for ii in range(len(node.inputs)):
         assert isinstance(connection_pattern[ii], list)
         assert len(connection_pattern[ii]) == len(node.outputs)
     return connection_pattern
@@ -1010,7 +1011,7 @@ def _populate_grad_dict(var_to_app_to_idx,
                 # copies of each destroyed input.
                 try:
                     dinputs = [node.inputs[x[0]] for x in
-                               node.op.destroy_map.values()]
+                               list(node.op.destroy_map.values())]
                 except AttributeError:
                     dinputs = []
 
@@ -1071,7 +1072,7 @@ def _populate_grad_dict(var_to_app_to_idx,
                 # by the user, not computed by Op.grad, and some gradients are
                 # only computed and returned, but never passed as another
                 # node's output grads.
-                for idx, packed in enumerate(izip(node.outputs,
+                for idx, packed in enumerate(zip(node.outputs,
                                              new_output_grads)):
                     orig_output, new_output_grad = packed
                     if not hasattr(orig_output, 'shape'):
@@ -1385,9 +1386,9 @@ class numeric_grad(object):
         # if not dtypes == [dtypes[0]] * len(apt):
         #      raise TypeError('All function arguments must have same dtype')
 
-        total_size = __builtin__.sum(prod(sh) for sh in shapes)
+        total_size = builtins.sum(prod(sh) for sh in shapes)
 
-        working_dtype = __builtin__.min(
+        working_dtype = builtins.min(
             (self.type_eps[dt], dt) for dt in dtypes)[1]
 
         # create un-initialized memory
@@ -1399,7 +1400,7 @@ class numeric_grad(object):
             gx = numpy.ndarray((total_size,), dtype=working_dtype)
 
         if eps is None:
-            eps = __builtin__.max(self.type_eps[dt] for dt in dtypes)
+            eps = builtins.max(self.type_eps[dt] for dt in dtypes)
 
         # set up aliases so that apt[i] is backed by memory in x
         # and self.gf is backed by memory in gx
@@ -1418,7 +1419,7 @@ class numeric_grad(object):
 
         # now iterate over the elements of x, and call f on apt.
         x_copy = x.copy()
-        for i in xrange(total_size):
+        for i in range(total_size):
             x[:] = x_copy
 
             x[i] += eps
@@ -1584,9 +1585,9 @@ def verify_grad(fun, pt, n_tests=2, rng=None, eps=None,
         float64=1e-4)
 
     if abs_tol is None:
-        abs_tol = __builtin__.max(_type_tol[str(p.dtype)] for p in pt)
+        abs_tol = builtins.max(_type_tol[str(p.dtype)] for p in pt)
     if rel_tol is None:
-        rel_tol = __builtin__.max(_type_tol[str(p.dtype)] for p in pt)
+        rel_tol = builtins.max(_type_tol[str(p.dtype)] for p in pt)
 
     if rng is None:
         raise TypeError(('rng should be a valid instance of '
@@ -1655,7 +1656,7 @@ def verify_grad(fun, pt, n_tests=2, rng=None, eps=None,
 
     grad_fn = function(tensor_pt, symbolic_grad)
 
-    for test_num in xrange(n_tests):
+    for test_num in range(n_tests):
         try:
             num_grad = numeric_grad(cost_fn, [p.copy() for p in pt],
                                     eps, out_type)
@@ -1677,7 +1678,7 @@ def verify_grad(fun, pt, n_tests=2, rng=None, eps=None,
             # get new random projection for next test
             if test_num < n_tests - 1:
                 t_r.set_value(random_projection(), borrow=True)
-        except Exception, e:
+        except Exception as e:
             e.args += ("\nThe error happened with the following inputs:", pt,
                        "\nThe value of eps is:", eps,
                        "\nThe out_type is:", out_type)

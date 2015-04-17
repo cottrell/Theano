@@ -131,7 +131,7 @@ class InputToGpuOptimizer(Optimizer):
                 new_input = host_from_gpu(gpu_from_host(input))
                 fgraph.replace_validate(input, new_input,
                                         "InputToGpuOptimizer")
-            except TypeError, e:
+            except TypeError as e:
                 # This could fail if the inputs are not TensorTypes
                 pass
 
@@ -436,7 +436,7 @@ def local_gpua_careduce(node):
 
             new_in_shp = [x_shape[0]]
             new_mask = [reduce_mask[0]]
-            for i in xrange(1, x.type.ndim):
+            for i in range(1, x.type.ndim):
                 if reduce_mask[i] == reduce_mask[i - 1]:
                     new_in_shp[-1] *= x_shape[i]
                 else:
@@ -702,8 +702,8 @@ def local_scan_to_gpua(node):
     scan_outs = [safe_to_gpu(x) for x in node.op.outputs]
     scan_outs = scan_utils.clone(
         scan_outs,
-        replace=zip(node.op.inputs,
-                    [safe_to_cpu(x) for x in scan_ins]))
+        replace=list(zip(node.op.inputs,
+                    [safe_to_cpu(x) for x in scan_ins])))
 
     # We need to construct the hash here, because scan
     # __init__ does not know about the gpu and can not

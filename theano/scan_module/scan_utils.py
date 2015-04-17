@@ -16,7 +16,7 @@ __contact__ = "Razvan Pascanu <r.pascanu@gmail>"
 import copy
 import logging
 import warnings
-from itertools import izip
+
 
 import numpy
 
@@ -148,7 +148,7 @@ def traverse(out, x, x_copy, d, visited=None):
 def hash_listsDictsTuples(x):
     hash_value = 0
     if isinstance(x, dict):
-        for k, v in x.iteritems():
+        for k, v in x.items():
             hash_value ^= hash_listsDictsTuples(k)
             hash_value ^= hash_listsDictsTuples(v)
     elif isinstance(x, (list, tuple)):
@@ -194,7 +194,7 @@ def clone(output,
         share_inputs = copy_inputs
 
     if isinstance(replace, dict):
-        items = replace.items()
+        items = list(replace.items())
     elif isinstance(replace, (list, tuple)):
         items = replace
     elif replace is None:
@@ -280,14 +280,14 @@ def get_updates_and_outputs(ls):
         if isinstance(x, list) or isinstance(x, tuple):
             iter_on = x
         elif isinstance(x, dict):
-            iter_on = x.iteritems()
+            iter_on = iter(x.items())
         if iter_on is not None:
-            return all(filter(y) for y in iter_on)
+            return all(list(filter(y)) for y in iter_on)
         else:
             return (isinstance(x, theano.Variable) or
                     isinstance(x, theano.scan_module.until))
 
-    if not filter(ls):
+    if not list(filter(ls)):
         raise ValueError(
                 'The return value of your scan lambda expression may only be '
                 'made of lists, tuples, or dictionaries containing Theano '
@@ -346,7 +346,7 @@ def isNaN_or_Inf_or_None(x):
     try:
         isNaN = numpy.isnan(x)
         isInf = numpy.isinf(x)
-        isStr = isinstance(x, basestring)
+        isStr = isinstance(x, str)
     except Exception:
         isNaN = False
         isInf = False
@@ -359,7 +359,7 @@ def isNaN_or_Inf_or_None(x):
         except Exception:
             isNaN = False
             isInf = False
-    if isinstance(x, gof.Constant) and isinstance(x.data, basestring):
+    if isinstance(x, gof.Constant) and isinstance(x.data, str):
         isStr = True
     else:
         isStr = False
@@ -374,7 +374,7 @@ def expand(tensor_var, size):
     # Corner case that I might use in an optimization
     if size == 0:
         return tensor_var
-    shapes = [tensor_var.shape[x] for x in xrange(tensor_var.ndim)]
+    shapes = [tensor_var.shape[x] for x in range(tensor_var.ndim)]
     zeros_shape = [size + shapes[0]] + shapes[1:]
     empty = tensor.zeros(zeros_shape,
                                dtype=tensor_var.dtype)
@@ -403,7 +403,7 @@ def equal_computations(xs, ys, in_xs=None, in_ys=None):
     if in_ys is None:
         in_ys = []
 
-    for x, y in izip(xs, ys):
+    for x, y in zip(xs, ys):
         if x.owner and not y.owner:
             return False
         if y.owner and not x.owner:
@@ -415,12 +415,12 @@ def equal_computations(xs, ys, in_xs=None, in_ys=None):
             return False
     if len(in_xs) != len(in_ys):
         return False
-    for _x, _y in izip(in_xs, in_ys):
+    for _x, _y in zip(in_xs, in_ys):
         if _x.type != _y.type:
             return False
 
     common = set(zip(in_xs, in_ys))
-    for dx, dy in izip(xs, ys):
+    for dx, dy in zip(xs, ys):
         # We checked above that both dx and dy have an owner or not
         if not dx.owner:
             if (isinstance(dx, tensor.Constant) and
@@ -449,7 +449,7 @@ def equal_computations(xs, ys, in_xs=None, in_ys=None):
         elif len(nd_x.outputs) != len(nd_y.outputs):
             return False
         else:
-            for dx, dy in izip(nd_x.inputs, nd_y.inputs):
+            for dx, dy in zip(nd_x.inputs, nd_y.inputs):
                 if (dx, dy) not in common:
                     if dx != dy:
                         if (isinstance(dx, tensor.Constant) and
@@ -461,7 +461,7 @@ def equal_computations(xs, ys, in_xs=None, in_ys=None):
                         else:
                             return False
 
-            for dx, dy in izip(nd_x.outputs, nd_y.outputs):
+            for dx, dy in zip(nd_x.outputs, nd_y.outputs):
                 common.add((dx, dy))
         idx += 1
 
@@ -480,7 +480,7 @@ def infer_shape(outs, inputs, input_shapes):
     # inside.  We don't use the full ShapeFeature interface, but we
     # let it initialize itself with an empty fgraph, otherwise we will
     # need to do it manually
-    for inp, inp_shp in izip(inputs, input_shapes):
+    for inp, inp_shp in zip(inputs, input_shapes):
         if inp_shp is not None and len(inp_shp) != inp.ndim:
             assert len(inp_shp) == inp.ndim
 
@@ -488,7 +488,7 @@ def infer_shape(outs, inputs, input_shapes):
     shape_feature.on_attach(theano.gof.FunctionGraph([], []))
 
     # Initialize shape_of with the input shapes
-    for inp, inp_shp in izip(inputs, input_shapes):
+    for inp, inp_shp in zip(inputs, input_shapes):
         shape_feature.set_shape(inp, inp_shp)
 
     def local_traverse(out):
@@ -544,8 +544,8 @@ class Validator(object):
 
         # Mapping from invalid variables to equivalent valid ones.
         self.valid_equivalent = valid_equivalent.copy()
-        self.valid.update(valid_equivalent.values())
-        self.invalid.update(valid_equivalent.keys())
+        self.valid.update(list(valid_equivalent.values()))
+        self.invalid.update(list(valid_equivalent.keys()))
 
     def check(self, out):
         '''
@@ -616,8 +616,8 @@ def scan_can_remove_outs(op, out_idxs):
         n_ins = len(op.info['tap_array'][idx])
         out_ins += [op.inputs[offset:offset + n_ins]]
         offset += n_ins
-    out_ins += [[] for k in xrange(op.n_nit_sot)]
-    out_ins += [[op.inputs[offset + k]] for k in xrange(op.n_shared_outs)]
+    out_ins += [[] for k in range(op.n_nit_sot)]
+    out_ins += [[op.inputs[offset + k]] for k in range(op.n_shared_outs)]
 
     added = True
     out_idxs_mask = [1 for idx in out_idxs]
@@ -676,7 +676,7 @@ def compress_outs(op, not_required, inputs):
     i_offset = op.n_seqs
     o_offset = 0
     curr_pos = 0
-    for idx in xrange(op.info['n_mit_mot']):
+    for idx in range(op.info['n_mit_mot']):
         if offset + idx not in not_required:
             map_old_new[offset + idx] = curr_pos
             curr_pos += 1
@@ -700,7 +700,7 @@ def compress_outs(op, not_required, inputs):
     offset += op.n_mit_mot
     ni_offset += op.n_mit_mot
 
-    for idx in xrange(op.info['n_mit_sot']):
+    for idx in range(op.info['n_mit_sot']):
         if offset + idx not in not_required:
             map_old_new[offset + idx] = curr_pos
             curr_pos += 1
@@ -721,7 +721,7 @@ def compress_outs(op, not_required, inputs):
 
     offset += op.n_mit_sot
     ni_offset += op.n_mit_sot
-    for idx in xrange(op.info['n_sit_sot']):
+    for idx in range(op.info['n_sit_sot']):
         if offset + idx not in not_required:
             map_old_new[offset + idx] = curr_pos
             curr_pos += 1
@@ -742,7 +742,7 @@ def compress_outs(op, not_required, inputs):
     offset += op.n_sit_sot
     ni_offset += op.n_sit_sot
     nit_sot_ins = []
-    for idx in xrange(op.info['n_nit_sot']):
+    for idx in range(op.info['n_nit_sot']):
         if offset + idx not in not_required:
             map_old_new[offset + idx] = curr_pos
             curr_pos += 1
@@ -755,7 +755,7 @@ def compress_outs(op, not_required, inputs):
 
     offset += op.n_nit_sot
     shared_ins = []
-    for idx in xrange(op.info['n_shared_outs']):
+    for idx in range(op.info['n_shared_outs']):
         if offset + idx not in not_required:
             map_old_new[offset + idx] = curr_pos
             curr_pos += 1
@@ -805,7 +805,7 @@ def reconstruct_graph(inputs, outputs, tag=None):
         tag = ''
     nw_inputs = [safe_new(x, tag) for x in inputs]
     givens = OrderedDict()
-    for nw_x, x in izip(nw_inputs, inputs):
+    for nw_x, x in zip(nw_inputs, inputs):
         givens[x] = nw_x
     allinputs = theano.gof.graph.inputs(outputs)
     for inp in allinputs:

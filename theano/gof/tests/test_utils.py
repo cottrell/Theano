@@ -41,4 +41,4 @@ def test_remove():
     odd = lambda x: x % 2 == 1
     # The list are neede as with python 3, remove and filter return generators
     # and we can't compare generators.
-    assert list(remove(even, range(5))) == list(filter(odd, range(5)))
+    assert list(remove(even, list(range(5)))) == list(filter(odd, list(range(5))))

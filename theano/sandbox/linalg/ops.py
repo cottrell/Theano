@@ -186,7 +186,7 @@ class HintsFeature(object):
     def update_second_from_first(self, r0, r1):
         old_hints = self.hints[r0]
         new_hints = self.hints[r1]
-        for k, v in old_hints.items():
+        for k, v in list(old_hints.items()):
             if k in new_hints and new_hints[k] is not v:
                 raise NotImplementedError()
             if k not in new_hints:
@@ -410,7 +410,7 @@ def spectral_radius_bound(X, log2_exponent):
                          'exponent', log2_exponent)
 
     XX = X
-    for i in xrange(log2_exponent):
+    for i in range(log2_exponent):
         XX = tensor.dot(XX, XX)
     return tensor.pow(
             trace(XX),

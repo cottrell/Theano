@@ -13,7 +13,7 @@ __copyright__ = "(c) 2010, Universite de Montreal"
 __contact__ = "Razvan Pascanu <r.pascanu@gmail>"
 
 import logging
-from itertools import izip
+
 
 import numpy
 
@@ -56,7 +56,7 @@ class ScanOp(PureOp):
         self.hash_inner_graph = options['hash_inner_graph']
         # --Construct the destroy map--
         if self.inplace:
-            for idx in xrange(len(outputs)):
+            for idx in range(len(outputs)):
                 self.destroy_map[idx] = [idx + 1]
         # --Decide on the default mode--
         mode_instance = compile.mode.get_mode(self.mode)
@@ -100,18 +100,18 @@ class ScanOp(PureOp):
         for arg in diff_args:
             if len(getattr(self, arg)) != len(getattr(other, arg)):
                 return False
-        for x, y in izip(self.inputs, other.inputs):
+        for x, y in zip(self.inputs, other.inputs):
             if x.type != y.type:
                 return False
-        for x, y in izip(self.lengths, other.lengths):
+        for x, y in zip(self.lengths, other.lengths):
             if x.type != y.type:
                 return False
 
         s_ins = [self.index] + self.inputs + self.lengths + self.switches
         o_ins = [other.index] + other.inputs + other.lengths + other.switches
-        givens = dict(izip(s_ins, o_ins))
+        givens = dict(zip(s_ins, o_ins))
         # This part might be slow
-        for x, y in izip(self.outputs, other.outputs):
+        for x, y in zip(self.outputs, other.outputs):
             if not gof.graph.is_same_graph(x, y, givens=givens):
                 return False
         return True
@@ -134,7 +134,7 @@ class ScanOp(PureOp):
 
     def __hash__(self):
         rval = hash(type(self)) ^ self.hash_inner_graph
-        for val in self.options.values():
+        for val in list(self.options.values()):
             if isinstance(val, (list, tuple)):
                 for el in val:
                     rval = rval ^ el
@@ -143,12 +143,12 @@ class ScanOp(PureOp):
         return rval
 
     def infer_shape(self, node, input_shapes):
-        for inp, inp_shp in izip(node.inputs, input_shapes):
+        for inp, inp_shp in zip(node.inputs, input_shapes):
             assert inp_shp is None or len(inp_shp) == inp.type.ndim
         n_outs = len(self.outputs)
         if self.as_repeatUntil is not None:
             return [(Shape_i(0)(o),) + x[1:] for o, x
-                    in izip(node.outputs, input_shapes[1: n_outs + 1])]
+                    in zip(node.outputs, input_shapes[1: n_outs + 1])]
         else:
             return input_shapes[1: n_outs + 1]
 
@@ -191,7 +191,7 @@ class ScanOp(PureOp):
 
         def fake_shared(var):
             val = 0
-            for dim in xrange(var.ndim):
+            for dim in range(var.ndim):
                 val = [val]
             val = numpy.asarray(val, dtype=var.dtype)
             return theano.shared(val, name=var.name)
@@ -199,7 +199,7 @@ class ScanOp(PureOp):
         non_tensor_args = []
         non_tensor_buffers = []
         aux_buffers = []
-        for mem_buf, var in izip(aux_membuffers, aux_inputs):
+        for mem_buf, var in zip(aux_membuffers, aux_inputs):
             if mem_buf[0] is not None:
                 givens[var] = theano.shared(mem_buf[0], name=var.name,
                                         borrow=True)
@@ -215,7 +215,7 @@ class ScanOp(PureOp):
         updates = {}
         state_buffers = []
         n_numeric_values = len(self.lengths)
-        for pos in xrange(n_numeric_values):
+        for pos in range(n_numeric_values):
             var = base_inputs[pos]
             mem_buf = base_buffers[pos]
             expr = self.outputs[pos]
@@ -274,19 +274,19 @@ class ScanOp(PureOp):
                 while cont and pos < node_input_storage[0][0]:
                     extra_args = [x[0] for x in non_numeric_states_bufs]
                     rvals = self.fn(*(fix_args + extra_args))
-                    for buf, rval in izip(non_numeric_states_bufs, rvals):
+                    for buf, rval in zip(non_numeric_states_bufs, rvals):
                         buf[0] = rval
                     cont = rvals[-1]
                     pos = pos + 1
                 # We need to trim the outputs if they are longer
-                for pos in xrange(n_numeric_values):
+                for pos in range(n_numeric_values):
                     buf = state_buffers[pos][2][0]
                     mintap = self.mintaps[pos]
                     if buf.shape[0] > pos + self.mintaps[pos]:
                         node_output_storage[pos][0] = buf[:pos + mintap]
                     else:
                         node_output_storage[pos][0] = buf
-                for out_buf, in_buf in izip(
+                for out_buf, in_buf in zip(
                         node_output_storage[n_numeric_values:],
                         non_numeric_states_bufs):
                     out_buf[0] = in_buf[0]
@@ -315,16 +315,16 @@ class ScanOp(PureOp):
                 self.index.set_value(numpy.int64(0))
                 # grab fixed arguments
                 fix_args = [x[0] for x in non_tensor_buffers]
-                for dx in xrange(node_input_storage[0][0]):
+                for dx in range(node_input_storage[0][0]):
                     extra_args = [x[0] for x in non_numeric_states_bufs]
                     rvals = self.fn(*(fix_args + extra_args))
-                    for buf, rval in izip(non_numeric_states_bufs, rvals):
+                    for buf, rval in zip(non_numeric_states_bufs, rvals):
                         buf[0] = rval
-                for pos in xrange(n_numeric_values):
+                for pos in range(n_numeric_values):
                     buf = state_buffers[pos][0].get_value(borrow=True)
                     mintap = self.mintaps[pos]
                     node_output_storage[pos][0] = buf
-                for out_buf, in_buf in izip(
+                for out_buf, in_buf in zip(
                         node_output_storage[n_numeric_values:],
                         non_numeric_states_bufs):
                     out_buf[0] = in_buf[0]
@@ -348,16 +348,16 @@ def profile_printer(fct_name, compile_time, fct_call_time, fct_call,
                     other_time):
     # Scan overhead profile
     if any([isinstance(node.op, Scan) and v > 0 for (_, node), v in
-            apply_time.items()]):
-        print
-        print 'Scan overhead:'
+            list(apply_time.items())]):
+        print()
+        print('Scan overhead:')
         print ('<Scan op time(s)> <sub scan fct time(s)> <sub scan op '
                'time(s)> <sub scan fct time(% scan op time)> <sub scan '
                'op time(% scan op time)> <node>')
         total_super_scan_time = 0
         total_scan_fct_time = 0
         total_scan_op_time = 0
-        for (_, node), v in apply_time.items():
+        for (_, node), v in list(apply_time.items()):
             if isinstance(node.op, Scan):
                 if v > 0:
                     scan_fct_time = node.op.mode_instance.fn_time
@@ -365,13 +365,13 @@ def profile_printer(fct_name, compile_time, fct_call_time, fct_call,
                     total_super_scan_time += v
                     total_scan_fct_time += scan_fct_time
                     total_scan_op_time += scan_op_time
-                    print '    %5.1fs  %5.1fs  %5.1fs  %5.1f%%  %5.1f%%' % (
+                    print('    %5.1fs  %5.1fs  %5.1fs  %5.1f%%  %5.1f%%' % (
                         v, scan_fct_time, scan_op_time,
-                        scan_fct_time / v * 100, scan_op_time / v * 100), node
+                        scan_fct_time / v * 100, scan_op_time / v * 100), node)
                 else:
-                    print (' The node took 0s, so we can not compute the '
-                           'overhead'), node
-        print '    total %5.1fs  %5.1fs  %5.1fs  %5.1f%%  %5.1f%%' % (
+                    print((' The node took 0s, so we can not compute the '
+                           'overhead'), node)
+        print('    total %5.1fs  %5.1fs  %5.1fs  %5.1f%%  %5.1f%%' % (
             total_super_scan_time, total_scan_fct_time, total_scan_op_time,
             total_scan_fct_time / total_super_scan_time * 100,
-            total_scan_op_time / total_super_scan_time * 100)
+            total_scan_op_time / total_super_scan_time * 100))

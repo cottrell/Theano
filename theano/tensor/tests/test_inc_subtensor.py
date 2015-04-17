@@ -105,7 +105,7 @@ class Test_inc_subtensor(unittest.TestCase):
         val_sl2_end = 2
 
         for method in [tt.set_subtensor, tt.inc_subtensor]:
-            print "MethodSet", method
+            print("MethodSet", method)
 
             resut = method(a[sl1, sl3, sl2], increment)
 

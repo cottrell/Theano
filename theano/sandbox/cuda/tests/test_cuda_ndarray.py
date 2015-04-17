@@ -459,7 +459,7 @@ def test_reshape():
 
         try:
             bb = b.reshape(shape_2)
-        except Exception, ValueError:
+        except Exception as ValueError:
             return
         assert False
 
@@ -507,7 +507,7 @@ def test_stride_manipulation():
     offset = 0
 
     b_strides = b._strides
-    for i in xrange(len(b.shape)):
+    for i in range(len(b.shape)):
         offset += (b.shape[i]-1) * b_strides[i]
         v._set_stride(i, -b_strides[i])
 
@@ -566,8 +566,8 @@ def test_mapping_getitem_w_int():
     def _cmp(x, y):
         assert x.shape == y.shape
         if not numpy.all(x == y):
-            print x
-            print y
+            print(x)
+            print(y)
         assert numpy.all(x == y)
 
     def _cmpf(x, *y):
@@ -751,7 +751,7 @@ def test_setitem_matrix_bad_shape():
         # attempt to assign the ndarray b with setitem
         _a[:, 1, 1] = _b
         assert False
-    except ValueError, e:
+    except ValueError as e:
         # print e
         assert True
 
@@ -760,7 +760,7 @@ def test_setitem_matrix_bad_shape():
         # attempt to assign the ndarray b with setitem
         _a[1, 1, :] = b
         assert False
-    except ValueError, e:
+    except ValueError as e:
         # print e
         assert True
 
@@ -778,7 +778,7 @@ def test_setitem_matrix_bad_ndim():
         # attempt to assign the ndarray b with setitem
         _a[:, :, 1] = _b
         assert False
-    except ValueError, e:
+    except ValueError as e:
         # print e
         assert True
 
@@ -787,7 +787,7 @@ def test_setitem_matrix_bad_ndim():
         # attempt to assign the ndarray b with setitem
         _a[1, :, :] = b
         assert False
-    except ValueError, e:
+    except ValueError as e:
         # print e
         assert True
 
@@ -805,7 +805,7 @@ def test_setitem_matrix_bad_type():
         # attempt to assign the ndarray b with setitem
         _a[1, :, :] = b
         assert False
-    except TypeError, e:
+    except TypeError as e:
         # print e
         assert True
 
@@ -942,7 +942,7 @@ def test_setitem_rightvalue_ndarray_fails():
         _a[0, :, :] = mat
         #a[0, :, :] = mat
         #assert numpy.allclose(numpy.asarray(_a), a)
-    except ValueError, e:
+    except ValueError as e:
         pass
 
     # test direct transfert from numpy with broadcast
@@ -991,7 +991,7 @@ def test_base():
     # Test that the 'base' attribute of a CudaNdarray is the one
     # built initially, not an intermediate one.
     a = cuda_ndarray.CudaNdarray.zeros((3, 4, 5))
-    for i in xrange(5):
+    for i in range(5):
         b = a[:]
     assert b.base is a
 

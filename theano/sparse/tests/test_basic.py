@@ -150,7 +150,7 @@ def sparse_random_inputs(format, shape, n=1, out_dtype=None, p=0.5, gap=None,
     if unsorted_indices:
         for idx in range(n):
             d = data[idx]
-            d = d[range(d.shape[0])]
+            d = d[list(range(d.shape[0]))]
             assert not d.has_sorted_indices
             data[idx] = d
     if explicit_zero:
@@ -186,11 +186,15 @@ class T_verify_grad_sparse(unittest.TestCase):
             x = as_sparse_variable(x)
             return gof.Apply(self, [x], [x.type()])
 
-        def perform(self, node, (x, ), (out, )):
+        def perform(self, node, xxx_todo_changeme, xxx_todo_changeme1):
+            (x, ) = xxx_todo_changeme
+            (out, ) = xxx_todo_changeme1
             assert _is_sparse(x)
             out[0] = -x
 
-        def grad(self, (x,), (gz,)):
+        def grad(self, xxx_todo_changeme2, xxx_todo_changeme3):
+            (x,) = xxx_todo_changeme2
+            (gz,) = xxx_todo_changeme3
             assert _is_sparse_variable(x) and _is_sparse_variable(gz)
             if self.structured:
                 return sp_ones_like(x) * dense_from_sparse(gz),
@@ -1136,7 +1140,7 @@ class test_structureddot(unittest.TestCase):
             mat = numpy.asarray(numpy.random.randn(N, K), dense_dtype)
             theano_times = []
             scipy_times = []
-            for i in xrange(5):
+            for i in range(5):
                 t0 = time.time()
                 theano_result = f(spmat, mat)
                 t1 = time.time()
@@ -1879,7 +1883,7 @@ class EnsureSortedIndicesTester(utt.InferShapeTester):
 
     def test_op(self):
         for format in sparse.sparse_formats:
-            for shape in zip(range(5, 9), range(3, 7)[::-1]):
+            for shape in zip(list(range(5, 9)), list(range(3, 7))[::-1]):
                 variable, data = sparse_random_inputs(format, shape=shape)
 
                 f = theano.function(variable, self.op(*variable))
@@ -1890,7 +1894,7 @@ class EnsureSortedIndicesTester(utt.InferShapeTester):
 
     def test_infer_shape(self):
         for format in sparse.sparse_formats:
-            for shape in zip(range(5, 9), range(3, 7)[::-1]):
+            for shape in zip(list(range(5, 9)), list(range(3, 7))[::-1]):
                 variable, data = sparse_random_inputs(format, shape=shape)
                 self._compile_and_check(variable,
                                         [self.op(*variable)],
@@ -1899,7 +1903,7 @@ class EnsureSortedIndicesTester(utt.InferShapeTester):
 
     def test_grad(self):
         for format in sparse.sparse_formats:
-            for shape in zip(range(5, 9), range(3, 7)[::-1]):
+            for shape in zip(list(range(5, 9)), list(range(3, 7))[::-1]):
                 variable, data = sparse_random_inputs(format, shape=shape)
                 verify_grad_sparse(
                     self.op,
@@ -1914,7 +1918,7 @@ class CleanTester(utt.InferShapeTester):
 
     def test_op(self):
         for format in sparse.sparse_formats:
-            for shape in zip(range(5, 9), range(3, 7)[::-1]):
+            for shape in zip(list(range(5, 9)), list(range(3, 7))[::-1]):
                 variable, data = sparse_random_inputs(format, shape=shape)
 
                 data[0][0, 0] = data[0][1, 1] = 0
@@ -1933,7 +1937,7 @@ class CleanTester(utt.InferShapeTester):
 
     def test_grad(self):
         for format in sparse.sparse_formats:
-            for shape in zip(range(5, 9), range(3, 7)[::-1]):
+            for shape in zip(list(range(5, 9)), list(range(3, 7))[::-1]):
                 variable, data = sparse_random_inputs(format, shape=shape)
                 verify_grad_sparse(
                     self.op,
@@ -2061,7 +2065,7 @@ class Test_getitem(unittest.TestCase):
 
         try:
             verify_grad_sparse(op_with_fixed_index, x_val)
-        except NotImplementedError, e:
+        except NotImplementedError as e:
             assert "Scipy version is to old" in str(e)
 
     def test_GetItem2Lists(self):

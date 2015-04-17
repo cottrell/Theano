@@ -3,7 +3,7 @@ VMs that run Theano graph computations.
 A VM is not actually different from a Linker, we just decided
 VM was a better name at some point.
 """
-import link
+from . import link
 import logging
 import os
 import sys
@@ -236,7 +236,7 @@ class VM(object):
             profile.dependencies = self.dependencies
 
         # clear the timer info out of the buffers
-        for i in xrange(len(self.call_times)):
+        for i in range(len(self.call_times)):
             self.call_times[i] = 0.0
             self.call_counts[i] = 0
 
@@ -429,7 +429,7 @@ class Stack(VM):
         last_apply_stack_len = -1
 
         # This record all function inputs/shared varibles and constants
-        for var, data in self.storage_map.iteritems():
+        for var, data in self.storage_map.items():
             if data[0] is None:
                 continue
             if hasattr(var.type, 'get_shape_info'):
@@ -649,7 +649,7 @@ class Stack(VM):
 
 
 try:
-    import lazylinker_c
+    from . import lazylinker_c
 
     class CVM(lazylinker_c.CLazyLinker, VM):
 
@@ -658,7 +658,7 @@ try:
             # skip VM.__init__
 except ImportError:
     pass
-except (OSError, theano.gof.cmodule.MissingGXX), e:
+except (OSError, theano.gof.cmodule.MissingGXX) as e:
     # OSError happens when g++ is not installed.  In that case, we
     # already changed the default linker to something else then CVM.
     # Currently this is the py linker.
@@ -832,17 +832,17 @@ class VM_Linker(link.LocalLinker):
 
             nodes_idx_inv = {}
             vars_idx_inv = {}
-            for (node, i) in nodes_idx.items():
+            for (node, i) in list(nodes_idx.items()):
                 nodes_idx_inv[i] = node
-            for (var, i) in vars_idx.items():
+            for (var, i) in list(vars_idx.items()):
                 vars_idx_inv[i] = var
 
             # put storage_map and compute_map into a int-based scheme
             n_applies = len(nodes)
             storage_map_list = [storage_map[vars_idx_inv[i]]
-                                for i in xrange(len(vars_idx_inv))]
+                                for i in range(len(vars_idx_inv))]
             compute_map_list = [compute_map[vars_idx_inv[i]]
-                                for i in xrange(len(vars_idx_inv))]
+                                for i in range(len(vars_idx_inv))]
             if nodes:
                 assert type(storage_map_list[0]) is list
                 assert type(compute_map_list[0]) is list
@@ -851,7 +851,7 @@ class VM_Linker(link.LocalLinker):
             dependency_map = self.compute_gc_dependencies(storage_map)
             dependency_map_list = [
                 [vars_idx[d] for d in dependency_map[vars_idx_inv[i]]]
-                for i in xrange(len(vars_idx_inv))]
+                for i in range(len(vars_idx_inv))]
 
             # build the pointers to node inputs and offsets
             base_input_output_list = []
@@ -871,7 +871,7 @@ class VM_Linker(link.LocalLinker):
 
             # build the var owner array
             var_owner = [None] * len(vars_idx)
-            for (var, i) in vars_idx.items():
+            for (var, i) in list(vars_idx.items()):
                 if var.owner:
                     var_owner[i] = nodes_idx[var.owner]
 
@@ -899,7 +899,7 @@ class VM_Linker(link.LocalLinker):
             # values of the update expressions).
             update_storage = []
             update_in_from_out = {}
-            for (ivar, ovar) in updated_vars.items():
+            for (ivar, ovar) in list(updated_vars.items()):
                 update_in_from_out[vars_idx[ovar]] = vars_idx[ivar]
             for oidx in output_vars:
                 if oidx in update_in_from_out:
@@ -999,7 +999,7 @@ class VM_Linker(link.LocalLinker):
                     # So if they didn't specify that its lazy or not, it isn't.
                     # If this member isn't present, it will crash later.
                     thunks[-1].lazy = False
-            except Exception, e:
+            except Exception as e:
                 e.args = ("The following error happened while"
                           " compiling the node", node, "\n") + e.args
                 raise
@@ -1013,7 +1013,7 @@ class VM_Linker(link.LocalLinker):
         if lazy is None:
             lazy = not all([(not th.lazy) for th in thunks])
         if not (lazy or (config.profile and config.profile_memory) or self.use_cloop or self.callback):
-            for pair in reallocated_info.values():
+            for pair in list(reallocated_info.values()):
                 storage_map[pair[1]] = storage_map[pair[0]]
 
         computed, last_user = link.gc_helper(order)
@@ -1025,7 +1025,7 @@ class VM_Linker(link.LocalLinker):
                     if ((input in computed)
                             and (input not in fgraph.outputs)
                             and (node == last_user[input])
-                            and input not in reallocated_info.keys()):
+                            and input not in list(reallocated_info.keys())):
                         clear_after_this_thunk.append(storage_map[input])
                 post_thunk_clear.append(clear_after_this_thunk)
         else:

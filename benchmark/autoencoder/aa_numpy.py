@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.5
-from __future__ import absolute_import
+
 import numpy as N
 import sys
 import time
@@ -19,7 +19,7 @@ x = (rng.rand(neg, nout)-0.5) * 1.5
 dot_time = 0.0
 
 t = time.time()
-for i in xrange(niter):
+for i in range(niter):
     tt = time.time()
     d = N.dot(x, w)
     dot_time += time.time() - tt
@@ -55,6 +55,6 @@ for i in xrange(niter):
     a -= lr * N.sum(g_hidin, axis=0)
 
 total_time = time.time() - t
-print 'time: ',total_time, 'err: ', err
-print ' of which', dot_time, 'was spent on dot. Fraction:', dot_time / total_time
+print('time: ',total_time, 'err: ', err)
+print(' of which', dot_time, 'was spent on dot. Fraction:', dot_time / total_time)
 

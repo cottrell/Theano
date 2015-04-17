@@ -19,7 +19,7 @@ from theano.compile import optdb
 from theano.gof import local_optimizer
 from theano.compat.python2x import all, any
 
-import multinomial
+from . import multinomial
 
 from theano.sandbox.cuda import cuda_available, cuda_enabled, GpuOp
 if cuda_available:
@@ -85,7 +85,9 @@ class DotModulo(Op):
     def make_node(self, A, s, m, A2, s2, m2):
         return Apply(self, [A, s, m, A2, s2, m2], [s.type()])
 
-    def perform(self, node, (A, s, m, A2, s2, m2), (out, )):
+    def perform(self, node, xxx_todo_changeme, xxx_todo_changeme1):
+        (A, s, m, A2, s2, m2) = xxx_todo_changeme
+        (out, ) = xxx_todo_changeme1
         o1 = matVecModM(A, s, m)
         o2 = matVecModM(A2, s2, m2)
         out[0] = numpy.concatenate((o1, o2))
@@ -93,7 +95,9 @@ class DotModulo(Op):
     def c_code_cache_version(self):
         return (6,)
 
-    def c_code(self, node, name, (_A, _s, _m, _A2, _s2, _m2), (_z, ), sub):
+    def c_code(self, node, name, xxx_todo_changeme2, xxx_todo_changeme3, sub):
+        (_A, _s, _m, _A2, _s2, _m2) = xxx_todo_changeme2
+        (_z, ) = xxx_todo_changeme3
         return """
         int osize = -1;
         if (PyArray_NDIM(%(_A)s) != 2) {PyErr_SetString(PyExc_NotImplementedError, "rank(A) != 2"); %(fail)s;}
@@ -342,7 +346,7 @@ class mrg_uniform(mrg_uniform_base):
             int(numpy_version[0]) <= 1 and
             int(numpy_version[1]) < 3):
 
-            print "Warning: you must use numpy version 1.3.0 or higher with the python version of this op. Otherwise numpy leak memory. and numpy"
+            print("Warning: you must use numpy version 1.3.0 or higher with the python version of this op. Otherwise numpy leak memory. and numpy")
             self.warned_numpy_version = True
 
         n_elements = 1
@@ -360,7 +364,7 @@ class mrg_uniform(mrg_uniform_base):
 
         err_orig = numpy.seterr(over='ignore')
         try:
-            for i in xrange(n_elements):
+            for i in range(n_elements):
                 sample = mrg_next_value(rstate[i % n_streams],
                                         rstate[i % n_streams])
                 rval[i] = sample
@@ -1114,7 +1118,7 @@ class MRG_RandomStreams(object):
         f.input_storage[2].storage[0] = M1
         f.input_storage[3].storage[0] = A2p72
         f.input_storage[5].storage[0] = M2
-        for i in xrange(1, n_streams):
+        for i in range(1, n_streams):
             # Inline the following call to bypass Python overhead
             #rval[i] = ff_2p72(rval[i - 1])
             v = rval[i - 1]

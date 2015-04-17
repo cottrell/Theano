@@ -10,6 +10,7 @@ from theano import config
 from theano.compat import reload
 from theano.gof.compilelock import get_lock, release_lock
 from theano.gof import cmodule
+import imp
 
 _logger = logging.getLogger('theano.gof.lazylinker_c')
 
@@ -26,7 +27,7 @@ def try_import():
 
 def try_reload():
     sys.path[0:0] = [config.compiledir]
-    reload(lazylinker_ext)
+    imp.reload(lazylinker_ext)
     del sys.path[0]
 
 try:
@@ -42,7 +43,7 @@ try:
         try:
             # Try to make the location
             os.mkdir(location)
-        except OSError, e:
+        except OSError as e:
             # If we get an error, verify that the error was # 17, the path already exists,
             # and that it is a directory
             # Note: we can't check if it exists before making it, because we are not holding
@@ -116,7 +117,7 @@ except ImportError:
             if not os.path.exists(loc):
                 try:
                     os.mkdir(loc)
-                except OSError, e:
+                except OSError as e:
                     assert e.errno == errno.EEXIST
                     assert os.path.exists(loc)
 

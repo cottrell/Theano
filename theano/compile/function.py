@@ -2,7 +2,7 @@
 """
 __docformat__ = "restructuredtext en"
 
-import cPickle
+import pickle
 import logging
 _logger = logging.getLogger('theano.compile.function')
 
@@ -27,7 +27,7 @@ def function_dump(filename, inputs, outputs=None, mode=None, updates=None,
     Theano compilation.
 
     """
-    assert isinstance(filename, basestring)
+    assert isinstance(filename, str)
     d = dict(inputs=inputs, outputs=outputs, mode=mode, updates=updates,
              givens=givens, no_default_updates=no_default_updates,
              accept_inplace=accept_inplace, name=name,
@@ -35,7 +35,7 @@ def function_dump(filename, inputs, outputs=None, mode=None, updates=None,
              allow_input_downcast=allow_input_downcast, profile=profile,
              on_unused_input=on_unused_input)
     with open(filename, 'wb') as f:
-        cPickle.dump(d, f, -1)
+        pickle.dump(d, f, -1)
 
 
 def function(inputs, outputs=None, mode=None, updates=None, givens=None,
@@ -187,10 +187,10 @@ def function(inputs, outputs=None, mode=None, updates=None, givens=None,
 
     """
     if isinstance(outputs, dict):
-        output_items = outputs.items()
+        output_items = list(outputs.items())
 
         for item_pair in output_items: 
-            assert isinstance(item_pair[0], basestring)
+            assert isinstance(item_pair[0], str)
 
         output_items_sorted = sorted(output_items)
 

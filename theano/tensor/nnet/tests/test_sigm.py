@@ -1,5 +1,5 @@
 import unittest
-from itertools import imap
+
 
 import numpy
 
@@ -259,11 +259,11 @@ class T_sigmoid_opts(unittest.TestCase):
                     compute_mul(trees[0]),
                     compute_mul(trees[1]))
             if not good:
-                print trees[0]
-                print trees[1]
-                print '***'
+                print(trees[0])
+                print(trees[1])
+                print('***')
                 theano.printing.debugprint(compute_mul(trees[0]))
-                print '***'
+                print('***')
                 theano.printing.debugprint(compute_mul(trees[1]))
             assert good
         ok(sigmoid(x) * exp(-x), sigmoid(-x))
@@ -441,7 +441,7 @@ class T_sigmoid_utils(unittest.TestCase):
             exp = tensor.exp
             assert is_1pexp(1 + exp(x)) == (False, x)
             assert is_1pexp(exp(x) + 1) == (False, x)
-            for neg, exp_arg in imap(is_1pexp, [(1 + exp(-x)), (exp(-x) + 1)]):
+            for neg, exp_arg in map(is_1pexp, [(1 + exp(-x)), (exp(-x) + 1)]):
                 assert not neg and theano.gof.graph.is_same_graph(exp_arg, -x)
             assert is_1pexp(1 - exp(x)) is None
             assert is_1pexp(2 + exp(x)) is None

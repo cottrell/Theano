@@ -355,7 +355,7 @@ def computeR(W, b, d, H, Rshape=None):
 
     if Rshape is not None and Rshape[0] != -1:
         if Rshape[0] < videoHeight:
-            print (Rshape[0], videoHeight)
+            print((Rshape[0], videoHeight))
             assert False
         assert Rshape[1] >= videoWidth
         assert Rshape[2] >= videoDur
@@ -372,14 +372,14 @@ def computeR(W, b, d, H, Rshape=None):
             videoWidth, videoDur, inputChannels), dtype=H.dtype)
 
     # R[i,j,r,c,t] = b_j + sum_{rc,rk | d \circ rc + rk = r} sum_{cc,ck | ...} sum_{tc,tk | ...} sum_k W[k, j, rk, ck, tk] * H[i,k,rc,cc,tc]
-    for i in xrange(0, batchSize):
+    for i in range(0, batchSize):
         # print '\texample '+str(i+1)+'/'+str(batchSize)
-        for j in xrange(0, inputChannels):
+        for j in range(0, inputChannels):
             # print '\t\tfeature map '+str(j+1)+'/'+str(inputChannels)
-            for r in xrange(0, videoHeight):
+            for r in range(0, videoHeight):
                 # print '\t\t\trow '+str(r+1)+'/'+str(videoHeight)
-                for c in xrange(0, videoWidth):
-                    for t in xrange(0, videoDur):
+                for c in range(0, videoWidth):
+                    for t in range(0, videoDur):
                         R[i, r, c, t, j] = b[j]
 
                         ftc = max([0, int(N.ceil(

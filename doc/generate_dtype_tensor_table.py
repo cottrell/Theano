@@ -19,14 +19,14 @@ shapes = [
         ('tensor4', (False,False,False,False)),]
 
 hdr = '============ =========== ==== =========== ================================='
-print hdr
-print 'Constructor  dtype       ndim shape       broadcastable'
-print hdr
+print(hdr)
+print('Constructor  dtype       ndim shape       broadcastable')
+print(hdr)
 for letter in letters:
     for shape in shapes:
         suff = ',)' if len(shape[1])==1 else ')'
         s = '(' + ','.join('1' if b else '?' for b in shape[1]) + suff
-        print '%s%-10s  %-10s  %-4s %-10s  %-20s' %(
+        print('%s%-10s  %-10s  %-4s %-10s  %-20s' %(
                 letter[0], shape[0], letter[1], len(shape[1]), s, shape[1]
-                )
-print hdr
+                ))
+print(hdr)

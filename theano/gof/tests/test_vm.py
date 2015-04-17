@@ -64,7 +64,7 @@ def test_speed():
 
     def numpy_version(x, depth):
         z = x
-        for d in xrange(depth):
+        for d in range(depth):
             z = (z+z)
         return z
 
@@ -83,9 +83,9 @@ def test_speed():
         t_a = t1 - t0
         t_b = t3 - t2
 
-        print "%s takes %f s/Kop" % (
+        print("%s takes %f s/Kop" % (
             'numpy',
-            (1000 * (t_b - t_a) / (steps_b - steps_a)))
+            (1000 * (t_b - t_a) / (steps_b - steps_a))))
 
     def time_linker(name, linker):
         steps_a = 5
@@ -113,9 +113,9 @@ def test_speed():
         t_a = t1 - t0
         t_b = t3 - t2
 
-        print "%s takes %f s/Kop" % (
+        print("%s takes %f s/Kop" % (
             name,
-            (1000*(t_b-t_a) / (steps_b - steps_a)))
+            (1000*(t_b-t_a) / (steps_b - steps_a))))
 
     time_linker('c|py', OpWiseCLinker)
     time_linker('vmLinker', vm.VM_Linker)
@@ -162,9 +162,9 @@ def test_speed_lazy():
         t_a = t1 - t0
         t_b = t3 - t2
 
-        print "%s takes %f s/Kop" % (
+        print("%s takes %f s/Kop" % (
             name,
-            (1000*(t_b-t_a) / (steps_b - steps_a)))
+            (1000*(t_b-t_a) / (steps_b - steps_a))))
 
     time_linker('vmLinker', vm.VM_Linker)
     time_linker('vmLinker_nogc', lambda: vm.VM_Linker(allow_gc=False))
@@ -203,16 +203,16 @@ if run_memory_usage_tests:
     # was stable.
     def test_leak2():
         import theano.sandbox.cuda as cuda
-        for i in xrange(1000000):
+        for i in range(1000000):
             n = numpy.asarray([2.3, 4.5], dtype='f')
             c = sys.getrefcount(n)
             a = cuda.CudaNdarray(n)
             assert c == sys.getrefcount(n)
             del a
             if not i % 1000:
-                print '.',
-                print gc.collect(),
-                print gc.collect()
+                print('.', end=' ')
+                print(gc.collect(), end=' ')
+                print(gc.collect())
             sys.stdout.flush()
 
     def test_no_leak_many_graphs():
@@ -220,7 +220,7 @@ if run_memory_usage_tests:
 
         # This isn't really a unit test, you have to run it and look at top to
         # see if there's a leak
-        for i in xrange(10000):
+        for i in range(10000):
             x = tensor.vector()
             z = x
             for d in range(10):
@@ -228,7 +228,7 @@ if run_memory_usage_tests:
 
             f = function([x], z, mode=Mode(optimizer=None, linker='cvm'))
             if not i % 100:
-                print gc.collect()
+                print(gc.collect())
             sys.stdout.flush()
 
             gc.collect()
@@ -259,19 +259,19 @@ if run_memory_usage_tests:
                            mode=Mode(optimizer=None,
                                      linker=linker()))
             inp = numpy.random.rand(1000000)
-            for i in xrange(100):
+            for i in range(100):
                 f_a(inp)
             if 0:  # this doesn't seem to work, prints 0 for everything
                 import resource
                 pre = resource.getrusage(resource.RUSAGE_SELF)
                 post = resource.getrusage(resource.RUSAGE_SELF)
-                print pre.ru_ixrss, post.ru_ixrss
-                print pre.ru_idrss, post.ru_idrss
-                print pre.ru_maxrss, post.ru_maxrss
-        print 1
+                print(pre.ru_ixrss, post.ru_ixrss)
+                print(pre.ru_idrss, post.ru_idrss)
+                print(pre.ru_maxrss, post.ru_maxrss)
+        print(1)
         time_linker('vmLinker_C',
                     lambda: vm.VM_Linker(allow_gc=False, use_cloop=True))
-        print 2
+        print(2)
         time_linker('vmLinker',
                     lambda: vm.VM_Linker(allow_gc=False, use_cloop=False))
 
@@ -296,12 +296,12 @@ if run_memory_usage_tests:
                            mode=Mode(optimizer=None,
                                      linker=linker()))
             inp = numpy.random.rand(1000000)
-            for i in xrange(500):
+            for i in range(500):
                 f_a(inp)
-        print 1
+        print(1)
         time_linker('vmLinker_C',
                     lambda: vm.VM_Linker(allow_gc=False, use_cloop=True))
-        print 2
+        print(2)
         time_linker('vmLinker',
                     lambda: vm.VM_Linker(allow_gc=False, use_cloop=False))
 
@@ -356,9 +356,9 @@ def test_reallocation():
 
         def check_storage(storage_map):
             from theano.tensor.var import TensorConstant
-            for i in storage_map.keys():
+            for i in list(storage_map.keys()):
                 if not isinstance(i, TensorConstant):
-                    keys_copy = storage_map.keys()[:]
+                    keys_copy = list(storage_map.keys())[:]
                     keys_copy.remove(i)
                     for o in keys_copy:
                         if (storage_map[i][0] and
@@ -368,4 +368,4 @@ def test_reallocation():
 
         assert check_storage(storage_map)[0]
         assert len(set([id(v) for v in
-                        storage_map.values()])) < len(storage_map)
+                        list(storage_map.values())])) < len(storage_map)

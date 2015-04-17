@@ -1,6 +1,6 @@
 import sys
 from copy import copy
-from itertools import izip
+
 
 import numpy
 
@@ -20,8 +20,8 @@ config = theano.config
 
 # We cannot import discrete_dtypes or float_dtypes from tensor.basic yet,
 # so we redefine them here
-discrete_dtypes = map(str, scalar.discrete_types)
-float_dtypes = map(str, scalar.float_types)
+discrete_dtypes = list(map(str, scalar.discrete_types))
+float_dtypes = list(map(str, scalar.float_types))
 
 
 # tensor depends on elemwise to provide definitions for several ops
@@ -327,7 +327,7 @@ class DimShuffle(Op):
                 str(nd_out) +
                 '-1] = PyArray_DESCR(%(basename)s)->elsize'
             )
-        for i in xrange(nd_out - 2, -1, -1):
+        for i in range(nd_out - 2, -1, -1):
             strides_statements.append(
                 "if (strides[%(i)s] == 0) strides[%(i)s] = strides[%(i)s+1] * dimensions[%(i)s+1]" % dict(i=str(i)))
 
@@ -365,16 +365,16 @@ PyArray_SetBaseObject(%(res)s, (PyObject*)%(basename)s);
                 + close_bracket)
 
         if 0:
-            print 'C_CODE'
-            print ''
-            print self
-            print "IN BROAD", self.input_broadcastable
-            print "NEW ORDER", self.new_order
-            print "SHUFFLE", self.shuffle
-            print "AUGMENT", self.augment
-            print '------------'
-            print ''
-            print full_code
+            print('C_CODE')
+            print('')
+            print(self)
+            print("IN BROAD", self.input_broadcastable)
+            print("NEW ORDER", self.new_order)
+            print("SHUFFLE", self.shuffle)
+            print("AUGMENT", self.augment)
+            print('------------')
+            print('')
+            print(full_code)
 
             if 0:
                 sys.exit()
@@ -408,9 +408,9 @@ class DimShufflePrinter:
         if new_order != () and  new_order[0] == 'x':
             return "%s" % self.__p(new_order[1:], pstate, r)
 #            return "[%s]" % self.__p(new_order[1:], pstate, r)
-        if list(new_order) == range(r.type.ndim):
+        if list(new_order) == list(range(r.type.ndim)):
             return pstate.pprinter.process(r)
-        if list(new_order) == list(reversed(range(r.type.ndim))):
+        if list(new_order) == list(reversed(list(range(r.type.ndim)))):
             return "%s.T" % pstate.pprinter.process(r)
         return "DimShuffle{%s}(%s)" % (", ".join(map(str, new_order)),
                 pstate.pprinter.process(r))
@@ -484,7 +484,7 @@ class Elemwise(OpenMPOp):
         self.name = name
         self.scalar_op = scalar_op
         self.inplace_pattern = inplace_pattern
-        self.destroy_map = dict((o, [i]) for o, i in inplace_pattern.items())
+        self.destroy_map = dict((o, [i]) for o, i in list(inplace_pattern.items()))
 
         self.ufunc = None
         self.nfunc = None
@@ -524,7 +524,7 @@ class Elemwise(OpenMPOp):
         is left-completed to the greatest number of dimensions with 1s
         using DimShuffle.
         """
-        inputs = map(as_tensor_variable, inputs)
+        inputs = list(map(as_tensor_variable, inputs))
         shadow = self.scalar_op.make_node(
                 *[get_scalar_type(dtype=i.type.dtype).make_variable()
                   for i in inputs])
@@ -541,7 +541,7 @@ class Elemwise(OpenMPOp):
                 # TODO: use LComplete instead
                 args.append(DimShuffle(
                     input.type.broadcastable,
-                    ['x'] * difference + range(length),
+                    ['x'] * difference + list(range(length)),
                     inplace=False)(input))
         inputs = args
 
@@ -554,14 +554,14 @@ class Elemwise(OpenMPOp):
         # it is multiplied by nout because Elemwise supports multiple outputs
         # (nout of them)
         out_broadcastables = [[all(bcast)
-            for bcast in izip(*[input.type.broadcastable
+            for bcast in zip(*[input.type.broadcastable
                 for input in inputs])]] * shadow.nout
 
         # inplace_pattern maps output idx -> input idx
         inplace_pattern = self.inplace_pattern
         if inplace_pattern:
-            for overwriter, overwritten in inplace_pattern.items():
-                for ob, ib in izip(out_broadcastables[overwriter],
+            for overwriter, overwritten in list(inplace_pattern.items()):
+                for ob, ib in zip(out_broadcastables[overwriter],
                                   inputs[overwritten].type.broadcastable):
                     if ib and not ob:
                         raise ValueError((
@@ -570,20 +570,20 @@ class Elemwise(OpenMPOp):
 
         out_dtypes = [o.type.dtype for o in shadow.outputs]
         if any(inputs[i].type.dtype != out_dtypes[o]
-                for o, i in inplace_pattern.items()):
+                for o, i in list(inplace_pattern.items())):
             raise TypeError((
                 "Cannot do an inplace operation on incompatible data types.",
                 ([i.type.dtype for i in inputs], out_dtypes, inplace_pattern)))
 
         outputs = [TensorType(dtype=dtype, broadcastable=broadcastable)()
-            for dtype, broadcastable in izip(out_dtypes, out_broadcastables)
+            for dtype, broadcastable in zip(out_dtypes, out_broadcastables)
             ]
         return Apply(self, inputs, outputs)
 
     def __eq__(self, other):
         if type(self) == type(other):
-            items = self.inplace_pattern.items()
-            other_items = other.inplace_pattern.items()
+            items = list(self.inplace_pattern.items())
+            other_items = list(other.inplace_pattern.items())
             items.sort()
             other_items.sort()
             rval = ((self.scalar_op == other.scalar_op)
@@ -603,7 +603,7 @@ class Elemwise(OpenMPOp):
     def __str__(self):
         if self.name is None:
             if self.inplace_pattern:
-                items = self.inplace_pattern.items()
+                items = list(self.inplace_pattern.items())
                 items.sort()
                 return "Elemwise{%s}%s" % (self.scalar_op, str(items))
             else:
@@ -624,7 +624,7 @@ class Elemwise(OpenMPOp):
             bgrads = self._bgrad(inputs, ograds)
             rop_out = None
 
-            for jdx, (inp, eval_point) in enumerate(izip(inputs,
+            for jdx, (inp, eval_point) in enumerate(zip(inputs,
                                                         eval_points)):
                 # if None, then we can just ignore this branch ..
                 # what we do is to assume that for any non-differentiable
@@ -676,7 +676,7 @@ class Elemwise(OpenMPOp):
             # can tell this op did
             # the right thing.
             new_rval = []
-            for elem, ipt in izip(rval, inputs):
+            for elem, ipt in zip(rval, inputs):
                 if isinstance(elem.type, (NullType, DisconnectedType)):
                     new_rval.append(elem)
                 else:
@@ -732,8 +732,8 @@ class Elemwise(OpenMPOp):
                     return t
                 return get_scalar_type(t.type.dtype)()
 
-            scalar_inputs = map(as_scalar, inputs)
-            scalar_ograds = map(as_scalar, ograds)
+            scalar_inputs = list(map(as_scalar, inputs))
+            scalar_ograds = list(map(as_scalar, ograds))
             scalar_igrads = self.scalar_op.grad(scalar_inputs, scalar_ograds)
             for igrad in scalar_igrads:
                 assert igrad is not None, self.scalar_op
@@ -767,7 +767,7 @@ class Elemwise(OpenMPOp):
                     *[transform(ipt) for ipt in node.inputs])
             return new_r
         ret = []
-        for scalar_igrad, ipt in izip(scalar_igrads, inputs):
+        for scalar_igrad, ipt in zip(scalar_igrads, inputs):
             if scalar_igrad is None:
                 # undefined gradient
                 ret.append(None)
@@ -785,7 +785,7 @@ class Elemwise(OpenMPOp):
             super(Elemwise, self).perform(node, inputs, output_storage)
 
         maxsize = max(len(input.shape) for input in inputs)
-        for dims in izip(*[zip(input.shape, sinput.type.broadcastable)
+        for dims in zip(*[list(zip(input.shape, sinput.type.broadcastable))
                           for input, sinput in zip(inputs, node.inputs)]):
             if max(d for d, b in dims) != 1 and (1, False) in dims:
                 # yes there may be more compact ways to write this code,
@@ -809,7 +809,7 @@ class Elemwise(OpenMPOp):
 
         # Determine the shape of outputs
         out_shape = []
-        for values in izip(*[input.shape for input in inputs]):
+        for values in zip(*[input.shape for input in inputs]):
             if any(v == 0 for v in values):
                 # All non-broadcasted dimensions should be zero
                 assert max(values) <= 1
@@ -854,7 +854,7 @@ class Elemwise(OpenMPOp):
         if nout == 1:
             variables = [variables]
         i = 0
-        for variable, storage, nout in izip(variables, output_storage,
+        for variable, storage, nout in zip(variables, output_storage,
                                             node.outputs):
             if getattr(variable, "dtype", "") == 'object':
                 # Since numpy 1.6, function created with numpy.frompyfunc
@@ -891,7 +891,7 @@ class Elemwise(OpenMPOp):
                 else:
                     # there must be some input that is not broadcastable in
                     # dimension 'dim'
-                    for ishp, i in izip(i_shapes, node.inputs):
+                    for ishp, i in zip(i_shapes, node.inputs):
                         if isinstance(i.type, theano.scalar.Scalar):
                             continue  # we skip scalar
                         if not i.type.broadcastable[dim]:
@@ -921,7 +921,7 @@ class Elemwise(OpenMPOp):
         # assert that inames and inputs order stay consistent.
         # This is to protect again futur change of uniq.
         assert len(inames) == len(inputs)
-        ii, iii = zip(*gof.utils.uniq(zip(_inames, node.inputs)))
+        ii, iii = list(zip(*gof.utils.uniq(list(zip(_inames, node.inputs)))))
         assert all([x == y for x, y in zip(ii, inames)])
         assert all([x == y for x, y in zip(iii, inputs)])
 
@@ -932,15 +932,15 @@ class Elemwise(OpenMPOp):
         # that overwrite them.  We just convert them to the actual
         # Variables.
         dmap = dict([(node.outputs[o], [node.inputs[i]])
-                     for o, i in self.inplace_pattern.iteritems()])
+                     for o, i in self.inplace_pattern.items()])
 
         # dtypes of the inputs
         idtypes = [input.type.dtype_specs()[1] for input in inputs]
 
         # These are the outputs that we will need to allocate
         # (output, name, name of the c type), transposed
-        real = zip(*[(r, s, r.type.dtype_specs()[1])
-                     for r, s in izip(node.outputs, onames) if r not in dmap])
+        real = list(zip(*[(r, s, r.type.dtype_specs()[1])
+                     for r, s in zip(node.outputs, onames) if r not in dmap]))
         if real:
             real_outputs, real_onames, real_odtypes = real
         else:
@@ -949,8 +949,8 @@ class Elemwise(OpenMPOp):
         # Outputs that are aliased with an input (inplace)
         # (output, name), transposed (c type name not needed since we don't
         # need to allocate.
-        aliased = zip(*[(r, s)
-                        for (r, s) in izip(node.outputs, onames) if r in dmap])
+        aliased = list(zip(*[(r, s)
+                        for (r, s) in zip(node.outputs, onames) if r in dmap]))
         if aliased:
             aliased_outputs, aliased_onames = aliased
         else:
@@ -966,7 +966,7 @@ class Elemwise(OpenMPOp):
         # dimensionality)
         nnested = len(orders[0])
         sub = dict(sub)
-        for i, (input, iname) in enumerate(izip(inputs, inames)):
+        for i, (input, iname) in enumerate(zip(inputs, inames)):
             # the c generators will substitute the input names for
             # references to loop variables lv0, lv1, ...
             sub['lv%i' % i] = iname
@@ -976,7 +976,7 @@ class Elemwise(OpenMPOp):
 
         # Check if all inputs (except broadcasted scalar) are fortran.
         # In that case, create an fortran output ndarray.
-        z = zip(inames, inputs)
+        z = list(zip(inames, inputs))
         alloc_fortran = ' && '.join(["PyArray_ISFORTRAN(%s)" % arr
                                      for arr, var in z
                                      if not all(var.broadcastable)])
@@ -989,16 +989,16 @@ class Elemwise(OpenMPOp):
         # We loop over the "real" outputs, i.e., those that are not
         # inplace (must be allocated) and we declare/allocate/check
         # them
-        for output, oname, odtype in izip(
+        for output, oname, odtype in zip(
                 real_outputs, real_onames, real_odtypes):
             i += 1  # before this loop, i = number of inputs
             sub['lv%i' % i] = oname
             sub['olv'] = oname
-            alloc += cgen.make_declare([range(nnested)], [odtype],
+            alloc += cgen.make_declare([list(range(nnested))], [odtype],
                                        dict(sub, lv0=oname))
             alloc += cgen.make_alloc(orders, odtype, sub,
                                      fortran=alloc_fortran)
-            alloc += cgen.make_checks([range(nnested)], [odtype],
+            alloc += cgen.make_checks([list(range(nnested))], [odtype],
                                       dict(sub, lv0=oname))
         olv_index = i  # index of the last output
 
@@ -1006,7 +1006,7 @@ class Elemwise(OpenMPOp):
         # inplace (overwrite the contents of one of the inputs) and
         # make the output pointers point to theur corresponding input
         # pointers.
-        for output, oname in izip(aliased_outputs, aliased_onames):
+        for output, oname in zip(aliased_outputs, aliased_onames):
             olv_index = inputs.index(dmap[output][0])
             iname = inames[olv_index]
             # We make the output point to the corresponding input and
@@ -1046,7 +1046,7 @@ class Elemwise(OpenMPOp):
         }
         """ % locals()
 
-        loop_orders = orders + [range(nnested)] * len(real_onames)
+        loop_orders = orders + [list(range(nnested))] * len(real_onames)
         dtypes = (idtypes + list(real_odtypes))
         if all([o.ndim <= 1 for o in node.outputs] or
                # Use simpler code when output ndim == 0 or 1
@@ -1060,7 +1060,7 @@ class Elemwise(OpenMPOp):
                 # No loops
                 task_decl = "".join([
                     "%s& %s_i = *%s_iter;\n" % (dtype, name, name)
-                    for name, dtype in izip(inames + list(real_onames),
+                    for name, dtype in zip(inames + list(real_onames),
                                             idtypes + list(real_odtypes))])
 
                 preloops = {}
@@ -1147,7 +1147,7 @@ class Elemwise(OpenMPOp):
                     }
                     """ % locals()
             if contig is not None:
-                z = zip(inames + onames, inputs + node.outputs)
+                z = list(zip(inames + onames, inputs + node.outputs))
                 cond1 = ' && '.join(["PyArray_ISCONTIGUOUS(%s)" % arr
                                     for arr, var in z
                                     if not all(var.broadcastable)])
@@ -1315,7 +1315,7 @@ class CAReduce(Op):
         input = as_tensor_variable(input)
         axis = self.axis
         if axis is None:
-            axis = range(len(input.type.broadcastable))
+            axis = list(range(len(input.type.broadcastable)))
         if any([a < 0 for a in axis]):
             axis2 = []
             for a in self.axis:
@@ -1370,7 +1370,7 @@ class CAReduce(Op):
         output, = out
         axis = self.axis
         if axis is None:
-            axis = range(input.ndim)
+            axis = list(range(input.ndim))
         variable = input
         to_reduce = reversed(sorted(axis))
 
@@ -1452,7 +1452,7 @@ class CAReduce(Op):
 
         axis = self.axis
         if axis is None:
-            axis = range(len(input.type.broadcastable))
+            axis = list(range(len(input.type.broadcastable)))
 
         if len(axis) == 0:
             # The acc_dtype is never a downcast compared to the input dtype
@@ -1463,13 +1463,13 @@ class CAReduce(Op):
             assert var.dtype == node.outputs[0].dtype
             return var.owner.op._c_all(var.owner, name, inames, onames, sub)
 
-        order1 = [i for i in xrange(input.type.ndim) if i not in axis]
+        order1 = [i for i in range(input.type.ndim) if i not in axis]
         order = order1 + list(axis)
 
         nnested = len(order1)
 
         sub = dict(sub)
-        for i, (input, iname) in enumerate(izip(node.inputs, inames)):
+        for i, (input, iname) in enumerate(zip(node.inputs, inames)):
             sub['lv%i' % i] = iname
 
         decl = ""
@@ -1492,11 +1492,11 @@ class CAReduce(Op):
 
         # Allocate output buffer
         alloc += cgen.make_declare(
-                [range(nnested) + ['x'] * len(axis)],
+                [list(range(nnested)) + ['x'] * len(axis)],
                 [odtype], dict(sub, lv0=oname))
         alloc += cgen.make_alloc([order1], odtype, sub)
         alloc += cgen.make_checks(
-                [range(nnested) + ['x'] * len(axis)],
+                [list(range(nnested)) + ['x'] * len(axis)],
                 [odtype], dict(sub, lv0=oname))
 
         if adtype != odtype:
@@ -1505,11 +1505,11 @@ class CAReduce(Op):
             sub['olv'] = aname
 
             alloc += cgen.make_declare(
-                    [range(nnested) + ['x'] * len(axis)],
+                    [list(range(nnested)) + ['x'] * len(axis)],
                     [adtype], dict(sub, lv0=aname))
             alloc += cgen.make_alloc([order1], adtype, sub)
             alloc += cgen.make_checks(
-                    [range(nnested) + ['x'] * len(axis)],
+                    [list(range(nnested)) + ['x'] * len(axis)],
                     [adtype], dict(sub, lv0=aname))
 
         if hasattr(self.scalar_op, 'identity'):
@@ -1534,7 +1534,7 @@ class CAReduce(Op):
             pattern = [0] * len(node.inputs[0].broadcastable)
             axis = self.axis
             if axis is None:
-                axis = range(len(pattern))
+                axis = list(range(len(pattern)))
             for i in axis:
                 pattern[i] = 1
             pattern_ = str(pattern)[1:-1]
@@ -1590,7 +1590,7 @@ for(int i=0;i<PyArray_NDIM(%(iname)s);i++){
         else:
             all_code = [task0_decl + code1]
         loop = cgen.make_loop_careduce(
-                [order, range(nnested) + ['x'] * len(axis)],
+                [order, list(range(nnested)) + ['x'] * len(axis)],
                 [idtype, adtype], all_code, sub)
 
         end = ""
@@ -1909,7 +1909,7 @@ class Sum(CAReduceDtype):
         gz = as_tensor_variable(gz)
         axis = self.axis
         if axis is None:
-            axis = range(x.type.ndim)
+            axis = list(range(x.type.ndim))
         if axis == ():
             return gz,
         new_dims = []
@@ -2022,7 +2022,7 @@ class Prod(CAReduceDtype):
         gz = as_tensor_variable(gz)
         axis = self.axis
         if axis is None:
-            axis = range(prod_in.type.ndim)
+            axis = list(range(prod_in.type.ndim))
         if axis == ():
             return gz,
         new_dims = []

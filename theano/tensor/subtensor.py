@@ -1,5 +1,5 @@
 from copy import copy
-from itertools import izip
+
 import os
 import sys
 from textwrap import dedent
@@ -60,7 +60,7 @@ def make_constant(args):
                 return slice(conv(a.start),
                              conv(a.stop),
                              conv(a.step))
-            elif isinstance(a, (int, long, numpy.integer)):
+            elif isinstance(a, (int, numpy.integer)):
                 return scal.ScalarConstant(scal.int64, a)
             else:
                 return a
@@ -376,7 +376,7 @@ class Subtensor(Op):
                 slice_c = None
 
             return slice(slice_a, slice_b, slice_c)
-        elif isinstance(entry, (int, long, numpy.integer)):
+        elif isinstance(entry, (int, numpy.integer)):
             # Disallow the use of python scalars in idx_list
             raise TypeError("Python scalar in idx_list."
                             "Please report this error to theano-dev.")
@@ -431,7 +431,7 @@ class Subtensor(Op):
                     else:
                         raise
 
-        return map(conv, real_idx)
+        return list(map(conv, real_idx))
 
     def __init__(self, idx_list):
         self.idx_list = tuple(map(self.convert, idx_list))
@@ -468,7 +468,7 @@ class Subtensor(Op):
             raise IndexError(
                 "Not enough inputs to fill in the Subtensor template.",
                 inputs, idx_list)
-        for input, expected_type in izip(inputs, input_types):
+        for input, expected_type in zip(inputs, input_types):
             if input.type != expected_type:
                 raise TypeError(
                     "Wrong type for Subtensor template. Expected %s, got %s."
@@ -478,7 +478,7 @@ class Subtensor(Op):
         padded = (self.get_constant_idx((None,)+inputs, allow_partial=True)
                   + [slice(None, None, None)] * (x.type.ndim - len(idx_list)))
         broadcastable = []
-        for i, (p, bc) in enumerate(izip(padded, x.type.broadcastable)):
+        for i, (p, bc) in enumerate(zip(padded, x.type.broadcastable)):
             if isinstance(p, slice):
                 if bc:
                     start = p.start
@@ -522,7 +522,7 @@ class Subtensor(Op):
         padded = (actual_idx_list +
                   [slice(None, None, None)] * (len(xshp) - len(self.idx_list)))
         i = 0
-        for idx, xl in izip(padded, xshp):
+        for idx, xl in zip(padded, xshp):
             if isinstance(idx, slice):
                 # If it is the default (None, None, None) slice, or a variant,
                 # the shape will be xl
@@ -1179,7 +1179,7 @@ class IncSubtensor(Op):
                  destroyhandler_tolerate_aliased=None):
         if destroyhandler_tolerate_aliased is None:
             destroyhandler_tolerate_aliased = []
-        self.idx_list = map(Subtensor.convert, idx_list)
+        self.idx_list = list(map(Subtensor.convert, idx_list))
         self.inplace = inplace
         if inplace:
             self.destroy_map = {0: [0]}
@@ -1236,7 +1236,7 @@ class IncSubtensor(Op):
             y: the value to increment by
             inputs: TODO WRITEME
         """
-        x, y = map(theano.tensor.as_tensor_variable, [x, y])
+        x, y = list(map(theano.tensor.as_tensor_variable, [x, y]))
         if y.ndim > x.ndim:
             raise ValueError(("Trying to increment a %d-dimensional "
                               "subtensor with a %d-dimensional value.") % (
@@ -1259,7 +1259,7 @@ class IncSubtensor(Op):
             raise IndexError(
                 "Not enough inputs to fill in the Subtensor template.",
                 inputs, idx_list)
-        for input, expected_type in izip(inputs, input_types):
+        for input, expected_type in zip(inputs, input_types):
             if input.type != expected_type:
                 raise TypeError(
                     "Wrong type for Subtensor template. Expected %s, got %s."
@@ -1585,7 +1585,7 @@ def _sum_grad_over_bcasted_dims(x, gx):
             assert gx.ndim > x.ndim
             for i in range(x_dim_added):
                 assert gx.broadcastable[i]
-            gx = gx.dimshuffle(*range(x_dim_added, gx.ndim))
+            gx = gx.dimshuffle(*list(range(x_dim_added, gx.ndim)))
         assert gx.broadcastable == x.broadcastable
     return gx
 
@@ -2288,7 +2288,7 @@ def take(a, indices, axis=None, mode='raise'):
             if axis < 0:
                 axis += a.ndim
             assert axis >= 0
-            shuffle = range(a.ndim)
+            shuffle = list(range(a.ndim))
             shuffle[0] = axis
             shuffle[axis] = 0
             return advanced_subtensor1(

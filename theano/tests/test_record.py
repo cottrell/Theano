@@ -1,7 +1,7 @@
 from theano.tests.record import *
 from theano import function
 from theano.tensor import iscalar
-import cStringIO
+import io
 
 
 def test_record_good():
@@ -13,27 +13,27 @@ def test_record_good():
     """
 
     # Record a sequence of events
-    output = cStringIO.StringIO()
+    output = io.StringIO()
 
     recorder = Record(file_object=output, replay=False)
 
     num_lines = 10
 
-    for i in xrange(num_lines):
+    for i in range(num_lines):
         recorder.handle_line(str(i)+'\n')
 
     # Make sure they were recorded correctly
     output_value = output.getvalue()
 
-    assert output_value == ''.join(str(i)+'\n' for i in xrange(num_lines))
+    assert output_value == ''.join(str(i)+'\n' for i in range(num_lines))
 
     # Make sure that the playback functionality doesn't raise any errors
     # when we repeat them
-    output = cStringIO.StringIO(output_value)
+    output = io.StringIO(output_value)
 
     playback_checker = Record(file_object=output,  replay=True)
 
-    for i in xrange(num_lines):
+    for i in range(num_lines):
         playback_checker.handle_line(str(i)+'\n')
 
 
@@ -44,23 +44,23 @@ def test_record_bad():
     """
 
     # Record a sequence of events
-    output = cStringIO.StringIO()
+    output = io.StringIO()
 
     recorder = Record(file_object=output, replay=False)
 
     num_lines = 10
 
-    for i in xrange(num_lines):
+    for i in range(num_lines):
         recorder.handle_line(str(i)+'\n')
 
     # Make sure that the playback functionality doesn't raise any errors
     # when we repeat some of them
     output_value = output.getvalue()
-    output = cStringIO.StringIO(output_value)
+    output = io.StringIO(output_value)
 
     playback_checker = Record(file_object=output,  replay=True)
 
-    for i in xrange(num_lines // 2):
+    for i in range(num_lines // 2):
         playback_checker.handle_line(str(i)+'\n')
 
     # Make sure it raises an error when we deviate from the recorded sequence
@@ -80,7 +80,7 @@ def test_record_mode_good():
     """
 
     # Record a sequence of events
-    output = cStringIO.StringIO()
+    output = io.StringIO()
 
     recorder = Record(file_object=output, replay=False)
 
@@ -91,14 +91,14 @@ def test_record_mode_good():
 
     num_lines = 10
 
-    for i in xrange(num_lines):
+    for i in range(num_lines):
         recorder.handle_line(str(i)+'\n')
         f(i)
 
     # Make sure that the playback functionality doesn't raise any errors
     # when we repeat them
     output_value = output.getvalue()
-    output = cStringIO.StringIO(output_value)
+    output = io.StringIO(output_value)
 
     playback_checker = Record(file_object=output,  replay=True)
 
@@ -107,7 +107,7 @@ def test_record_mode_good():
     i = iscalar()
     f = function([i], i, mode=playback_mode, name='f')
 
-    for i in xrange(num_lines):
+    for i in range(num_lines):
         playback_checker.handle_line(str(i)+'\n')
         f(i)
 
@@ -120,7 +120,7 @@ def test_record_mode_bad():
     """
 
     # Record a sequence of events
-    output = cStringIO.StringIO()
+    output = io.StringIO()
 
     recorder = Record(file_object=output, replay=False)
 
@@ -131,14 +131,14 @@ def test_record_mode_bad():
 
     num_lines = 10
 
-    for i in xrange(num_lines):
+    for i in range(num_lines):
         recorder.handle_line(str(i)+'\n')
         f(i)
 
     # Make sure that the playback functionality doesn't raise any errors
     # when we repeat them
     output_value = output.getvalue()
-    output = cStringIO.StringIO(output_value)
+    output = io.StringIO(output_value)
 
     playback_checker = Record(file_object=output,  replay=True)
 
@@ -147,7 +147,7 @@ def test_record_mode_bad():
     i = iscalar()
     f = function([i], i, mode=playback_mode, name='f')
 
-    for i in xrange(num_lines // 2):
+    for i in range(num_lines // 2):
         playback_checker.handle_line(str(i)+'\n')
         f(i)
 

@@ -140,7 +140,7 @@ def remove_constants_and_unused_inputs_scan(node):
     nw_outer = [node.inputs[0]]
 
     all_ins = gof.graph.inputs(op_outs)
-    for idx in xrange(op.n_seqs):
+    for idx in range(op.n_seqs):
         node_inp = node.inputs[idx + 1]
         if (isinstance(node_inp, tensor.TensorConstant) and
             node_inp.tag.unique_value is not None):
@@ -344,7 +344,7 @@ class PushOutNonSeqScan(gof.Optimizer):
                              **dict(return_list=True))[0].owner
 
             fgraph.replace_all_validate_remove(
-                zip(node.outputs, nw_node.outputs),
+                list(zip(node.outputs, nw_node.outputs)),
                 remove=[node],
                 reason='scanOp_pushout_nonseqs_ops')
             return True
@@ -355,7 +355,7 @@ class PushOutNonSeqScan(gof.Optimizer):
                 if out in local_fgraph.outputs:
                     x = node.outputs[local_fgraph.outputs.index(out)]
                     y = replace_with_out[idx]
-                    shape = [y.shape[idx] for idx in xrange(y.ndim)]
+                    shape = [y.shape[idx] for idx in range(y.ndim)]
                     replace_with[x] = tensor.alloc(y,
                                                    node.inputs[0],
                                                    *shape)
@@ -365,7 +365,7 @@ class PushOutNonSeqScan(gof.Optimizer):
             # subtensor is applied that takes only the last element
             if replace_with:
                 fgraph.replace_all_validate_remove(
-                    replace_with.items(),
+                    list(replace_with.items()),
                     remove=[node],
                     reason='scanOp_pushout_nonseqs_ops')
 
@@ -543,7 +543,7 @@ class PushOutSeqScan(gof.Optimizer):
                              **dict(return_list=True))[0].owner
 
             fgraph.replace_all_validate_remove(
-                zip(node.outputs, nw_node.outputs),
+                list(zip(node.outputs, nw_node.outputs)),
                 remove=[node],
                 reason='scanOp_pushout_seqs_ops')
             return True
@@ -575,7 +575,7 @@ class PushOutSeqScan(gof.Optimizer):
             # We need to add one extra dimension to the outputs
             if replace_with and len(replace_with) == len(node.outputs):
                 fgraph.replace_all_validate_remove(
-                    replace_with.items(),
+                    list(replace_with.items()),
                     remove=[node],
                     reason='scanOp_pushout_seqs_ops')
                 return True
@@ -906,7 +906,7 @@ class PushOutScanOutput(gof.Optimizer):
                 new_scan_node.outputs[new_node_new_outputs_idx+nb_new_outs:])
 
         fgraph.replace_all_validate_remove(
-            zip(old_scan_node.outputs, new_node_old_outputs),
+            list(zip(old_scan_node.outputs, new_node_old_outputs)),
             remove=[old_scan_node],
             reason='scanOp_pushout_output')
 
@@ -932,13 +932,13 @@ class ScanInplaceOptimizer(Optimizer):
                       if (isinstance(x.op, scan_op.Scan) and
                           x.op.info['gpu'] == self.gpu_flag and
                           x.op.info['gpua'] == self.gpua_flag)]
-        for scan_idx in xrange(len(scan_nodes)):
+        for scan_idx in range(len(scan_nodes)):
             node = scan_nodes[scan_idx]
             op = node.op
             n_outs = (op.info['n_mit_mot'] +
                       op.info['n_mit_sot'] +
                       op.info['n_sit_sot'])
-            for pos in xrange(n_outs):
+            for pos in range(n_outs):
                 info = copy.deepcopy(op.info)
                 if not 'destroy_map' in info:
                     info['destroy_map'] = OrderedDict()
@@ -952,7 +952,7 @@ class ScanInplaceOptimizer(Optimizer):
                 ls_end += op.outer_nitsot(node.inputs)
                 ls_end += op.outer_non_seqs(node.inputs)
                 n_outs = len(ls)
-                for idx in xrange(n_outs):
+                for idx in range(n_outs):
                     if ls[idx] in ls[:idx]:
                         ls[idx] = deep_copy_op(ls[idx])
 
@@ -966,12 +966,12 @@ class ScanInplaceOptimizer(Optimizer):
                 new_outs = new_op(*inputs, **dict(return_list=True))
                 try:
                     fgraph.replace_all_validate_remove(
-                        zip(node.outputs, new_outs),
+                        list(zip(node.outputs, new_outs)),
                         remove=[node],
                         reason='scanOp_make_inplace')
                     op = new_op
                     node = new_outs[0].owner
-                except InconsistencyError, e:
+                except InconsistencyError as e:
                     # Failed moving output to be comptued inplace
                     pass
 
@@ -1026,9 +1026,9 @@ class ScanSaveMem(gof.Optimizer):
         op = node.op
         c_outs = op.n_mit_mot + op.n_mit_sot + op.n_sit_sot + op.n_nit_sot
 
-        init_l = [0 for x in xrange(op.n_mit_mot)]
+        init_l = [0 for x in range(op.n_mit_mot)]
         init_l += [abs(numpy.min(v)) for v in op.tap_array[op.n_mit_mot:]]
-        init_l += [0 for x in xrange(op.n_nit_sot)]
+        init_l += [0 for x in range(op.n_nit_sot)]
         # 2. Check the clients of each output and see for how many steps
         # does scan need to run
 
@@ -1069,7 +1069,7 @@ class ScanSaveMem(gof.Optimizer):
         # Note that for mit_mot outputs and shared outputs we can not change
         # the number of intermediate steps stored without affecting the
         # result of the op
-        store_steps = [0 for o in xrange(op.n_mit_mot)]
+        store_steps = [0 for o in range(op.n_mit_mot)]
         store_steps += [-1 for o in node.outputs[op.n_mit_mot:c_outs]]
         # Flag that says if an input has changed and we need to do something
         # or not
@@ -1149,15 +1149,15 @@ class ScanSaveMem(gof.Optimizer):
                         if isinstance(stop, tensor.Variable):
                             global_nsteps['sym'] += [stop]
                         # not if it is maxsize
-                        elif (type(stop) in (int, long) and
+                        elif (type(stop) in (int, int) and
                               stop == maxsize):
                             global_nsteps = None
                         # yes if it is a int k, 0 < k < maxsize
-                        elif (type(stop) in (int, long) and
+                        elif (type(stop) in (int, int) and
                               global_nsteps['real'] < stop):
                             global_nsteps['real'] = stop
                         # yes if it is a int k, 0 < k < maxsize
-                        elif (type(stop) in (int, long) and stop > 0):
+                        elif (type(stop) in (int, int) and stop > 0):
                             pass
                         # not otherwise
                         else:
@@ -1350,7 +1350,7 @@ class ScanSaveMem(gof.Optimizer):
             (inps, outs, info, node_ins, compress_map) = \
                     scan_utils.compress_outs(op, not_required, nw_inputs)
             inv_compress_map = OrderedDict()
-            for k, v in compress_map.items():
+            for k, v in list(compress_map.items()):
                 inv_compress_map[v] = k
 
             node_ins = [pre_greedy_local_optimizer(list_opt_slice, x) for x in
@@ -1546,7 +1546,7 @@ class ScanMerge(gof.Optimizer):
             # SitSot
             inner_ins[idx].append(
                 rename(nd.op.inner_sitsot(nd.op.inputs), idx))
-            info['tap_array'] += [[-1] for x in xrange(nd.op.n_sit_sot)]
+            info['tap_array'] += [[-1] for x in range(nd.op.n_sit_sot)]
             inner_outs[idx].append(nd.op.inner_sitsot_outs(nd.op.outputs))
             outer_ins += rename(nd.op.outer_sitsot(nd.inputs), idx)
             outer_outs += nd.op.outer_sitsot_outs(nd.outputs)
@@ -1642,7 +1642,7 @@ class ScanMerge(gof.Optimizer):
         if not isinstance(new_outs, (list, tuple)):
             new_outs = [new_outs]
 
-        return zip(outer_outs, new_outs)
+        return list(zip(outer_outs, new_outs))
 
     def belongs_to_set(self, node, set_nodes):
         """
@@ -2066,10 +2066,10 @@ class PushOutDot1(gof.Optimizer):
                             new_out = tensor.dot(val, out_seq)
 
                         pos = node.outputs.index(outer_out)
-                        old_new = zip(node.outputs[:pos], new_outs[:pos])
+                        old_new = list(zip(node.outputs[:pos], new_outs[:pos]))
                         old = node.outputs[pos].clients[0][0].outputs[0]
                         old_new.append((old, new_out))
-                        old_new += zip(node.outputs[pos+1:], new_outs[pos:])
+                        old_new += list(zip(node.outputs[pos+1:], new_outs[pos:]))
                         fgraph.replace_all_validate_remove(
                             old_new, remove=[node], reason='scan_pushout_dot1')
 

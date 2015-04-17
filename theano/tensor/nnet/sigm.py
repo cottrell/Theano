@@ -4,7 +4,7 @@ These functions implement special cases of exp and log to improve numerical stab
 """
 
 import warnings
-from itertools import imap
+
 
 import numpy
 
@@ -148,9 +148,9 @@ for i in xrange(750):
                              'doc', 'library', 'tensor', 'nnet',
                              'sigmoid_prec.png')
         plt.savefig(fname)
-        print "New picture saved at", fname
-        print val_ultra.max()
-        print val_ultra.min()
+        print("New picture saved at", fname)
+        print(val_ultra.max())
+        print(val_ultra.min())
 
 
 scalar_sigmoid = ScalarSigmoid(scalar.upgrade_to_float, name='scalar_sigmoid')
@@ -602,7 +602,7 @@ def parse_mul_tree(root):
             return [not neg, sub_tree]
     else:
         # Recurse into inputs.
-        return [False, map(parse_mul_tree, mul_info)]
+        return [False, list(map(parse_mul_tree, mul_info))]
 
 
 def replace_leaf(arg, leaves, new_leaves, op, neg):
@@ -656,7 +656,7 @@ def simplify_mul(tree):
     if isinstance(inputs, list):
         # Recurse through inputs.
         s_inputs = []
-        for s_i in imap(simplify_mul, inputs):
+        for s_i in map(simplify_mul, inputs):
             if s_i[1] is None:
                 # Multiplication by +/-1.
                 neg ^= s_i[0]
@@ -696,7 +696,7 @@ def compute_mul(tree):
             'call `simplify_mul` on the tree first?')
     elif isinstance(inputs, list):
         # Recurse through inputs.
-        rval = tensor.mul(*map(compute_mul, inputs))
+        rval = tensor.mul(*list(map(compute_mul, inputs)))
     else:
         rval = inputs
     if neg:
@@ -752,13 +752,13 @@ def perform_sigm_times_exp(tree, exp_x=None, exp_minus_x=None, sigm_x=None,
     if full_tree is None:
         full_tree = tree
     if False:  # Debug code.
-        print '<perform_sigm_times_exp>'
-        print '  full_tree   = %s' % full_tree
-        print '  tree        = %s' % tree
-        print '  exp_x       = %s' % exp_x
-        print '  exp_minus_x = %s' % exp_minus_x
-        print '  sigm_x      = %s' % sigm_x
-        print '  sigm_minus_x= %s' % sigm_minus_x
+        print('<perform_sigm_times_exp>')
+        print('  full_tree   = %s' % full_tree)
+        print('  tree        = %s' % tree)
+        print('  exp_x       = %s' % exp_x)
+        print('  exp_minus_x = %s' % exp_minus_x)
+        print('  sigm_x      = %s' % sigm_x)
+        print('  sigm_minus_x= %s' % sigm_minus_x)
     neg, inputs = tree
     if isinstance(inputs, list):
         # Recurse through inputs of the multiplication.
@@ -879,7 +879,7 @@ def local_1msigmoid(node):
         if sub_r.owner and sub_r.owner.op == sigmoid:
             try:
                 val_l = opt.get_scalar_constant_value(sub_l)
-            except Exception, e:
+            except Exception as e:
                 return
             if numpy.allclose(numpy.sum(val_l), 1):
                 return [sigmoid(-sub_r.owner.inputs[0])]
@@ -904,8 +904,8 @@ if 0:
     @opt.register_stabilize
     @gof.local_optimizer([tensor.mul])
     def local_sigm_gest(node):
-        print "CANONICALIZE"
-        print sigm_canonicalize(node)
+        print("CANONICALIZE")
+        print(sigm_canonicalize(node))
 
     def sigm_canonicalize(node):
         add = tensor.add

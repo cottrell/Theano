@@ -4,7 +4,7 @@ fg.py: fg stands for FunctionGraph
 Contains the FunctionGraph class and exception
 types that it can raise
 """
-import StringIO
+import io
 import sys
 import time
 import traceback
@@ -162,13 +162,13 @@ class FunctionGraph(utils.object2):
             raise Exception("%s is already owned by another fgraph" % node)
         if (hasattr(node.op, 'view_map') and
             not all([isinstance(view, (list, tuple))
-                     for view in node.op.view_map.values()])):
+                     for view in list(node.op.view_map.values())])):
             raise Exception("Op '%s' have a bad view map '%s',"
                             " the values must be tuples or lists." % (
                                 str(node.op), str(node.op.view_map)))
         if (hasattr(node.op, 'destroy_map') and
             not all([isinstance(destroy, (list, tuple))
-                     for destroy in node.op.destroy_map.values()])):
+                     for destroy in list(node.op.destroy_map.values())])):
             raise Exception("Op '%s' have a bad destroy map '%s',"
                             " the values must be tuples or lists." % (
                                 str(node.op), str(node.op.destroy_map)))
@@ -216,11 +216,11 @@ class FunctionGraph(utils.object2):
         Updates the list of clients of r with new_clients.
         """
         if set(r.clients).intersection(set(new_clients)):
-            print >> sys.stderr, 'ERROR: clients intersect!'
-            print >> sys.stderr, '  RCLIENTS of', r, [(n, i, type(n), id(n))
-                                                      for n, i in r.clients]
-            print >> sys.stderr, '  NCLIENTS of', r, [(n, i, type(n), id(n))
-                                                      for n, i in new_clients]
+            print('ERROR: clients intersect!', file=sys.stderr)
+            print('  RCLIENTS of', r, [(n, i, type(n), id(n))
+                                                      for n, i in r.clients], file=sys.stderr)
+            print('  NCLIENTS of', r, [(n, i, type(n), id(n))
+                                                      for n, i in new_clients], file=sys.stderr)
         assert not set(r.clients).intersection(set(new_clients))
         r.clients += new_clients
 
@@ -235,9 +235,9 @@ class FunctionGraph(utils.object2):
         for entry in clients_to_remove:
             r.clients.remove(entry)
             if entry in r.clients:
-                print >> sys.stderr, 'ERROR: DUPLICATE CLIENT ENTRY...'
-                print >> sys.stderr, '  ENTRY', repr(entry), type(entry[0])
-                print >> sys.stderr, '  CLIENTS', repr(r.clients)
+                print('ERROR: DUPLICATE CLIENT ENTRY...', file=sys.stderr)
+                print('  ENTRY', repr(entry), type(entry[0]), file=sys.stderr)
+                print('  CLIENTS', repr(r.clients), file=sys.stderr)
             assert entry not in r.clients  # an op,i pair should be unique
         if not r.clients:
             if prune:
@@ -250,7 +250,7 @@ class FunctionGraph(utils.object2):
     def __import_r__(self, variables, reason):
         global NullType
         if NullType is None:
-            from null_type import NullType
+            from .null_type import NullType
         # Imports the owners of the variables
         for apply_node in [r.owner for r in variables if r.owner is not None]:
             if apply_node not in self.apply_nodes:
@@ -338,7 +338,7 @@ class FunctionGraph(utils.object2):
                             tr = getattr(r.tag, 'trace', None)
                             detailed_err_msg = ""
                             if tr:
-                                sio = StringIO.StringIO()
+                                sio = io.StringIO()
                                 traceback.print_list(tr, sio)
                                 tr = sio.getvalue()
                                 detailed_err_msg += "\nBacktrace when the variable is created:\n"
@@ -460,7 +460,7 @@ class FunctionGraph(utils.object2):
         if verbose is None:
             verbose = config.optimizer_verbose
         if verbose:
-            print reason, r, new_r
+            print(reason, r, new_r)
         if r.fgraph is not self:
             raise Exception("Cannot replace %s because it does not belong "
                             "to this FunctionGraph" % r, str(reason))
@@ -643,7 +643,7 @@ class FunctionGraph(utils.object2):
                                     str(feature.orderings) +
                                     ". Nondeterministic object is " +
                                     str(orderings))
-                for node, prereqs in orderings.items():
+                for node, prereqs in list(orderings.items()):
                     if not isinstance(prereqs, (list, OrderedSet)):
                         raise TypeError(
                             "prereqs must be a type with a "
@@ -651,7 +651,7 @@ class FunctionGraph(utils.object2):
                             " will be non-deterministic.")
                     ords.setdefault(node, []).extend(prereqs)
         # eliminate duplicate prereqs
-        for (node, prereqs) in ords.items():
+        for (node, prereqs) in list(ords.items()):
             ords[node] = list(OrderedSet(prereqs))
         return ords
 

@@ -25,8 +25,8 @@ def grad_sources_inputs(sources, inputs):
     """
     if inputs is None:
         inputs = theano.gof.graph.inputs([source[0] for source in sources])
-    return dict(zip(inputs, theano.gradient.grad(cost=None, known_grads=dict(sources),
-        wrt=inputs, consider_constant=inputs)))
+    return dict(list(zip(inputs, theano.gradient.grad(cost=None, known_grads=dict(sources),
+        wrt=inputs, consider_constant=inputs))))
 
 
 class testgrad_sources_inputs(unittest.TestCase):
@@ -464,9 +464,9 @@ def test_known_grads():
     true_grads = true_grads(*values)
 
     for layer in layers:
-        print 'Testing by separately computing ', layer
+        print('Testing by separately computing ', layer)
         first = theano.tensor.grad(cost, layer, disconnected_inputs='ignore')
-        known = dict(zip(layer, first))
+        known = dict(list(zip(layer, first)))
         full = theano.tensor.grad(cost=None,
                 known_grads=known, wrt=inputs, disconnected_inputs='ignore')
         full = theano.function(inputs, full)
@@ -474,13 +474,13 @@ def test_known_grads():
         assert len(true_grads) == len(full)
         for a, b, var in zip(true_grads, full, inputs):
             if not np.allclose(a, b):
-                print 'Failure'
-                print a
-                print b
-                print var
-                print layer
+                print('Failure')
+                print(a)
+                print(b)
+                print(var)
+                print(layer)
                 for v in known:
-                    print v, ':', theano.function(inputs, known[v])(*values)
+                    print(v, ':', theano.function(inputs, known[v])(*values))
                 assert False
 
 
@@ -594,12 +594,12 @@ def test_subgraph_grad():
     from theano.compat.python2x import OrderedDict
     next_grad = None
     param_grads = []
-    for i in xrange(2):
+    for i in range(2):
         param_grad, next_grad = theano.subgraph_grad(
             wrt=params[i], end=grad_ends[i],
             start=next_grad, cost=costs[i]
         )
-        next_grad = OrderedDict(zip(grad_ends[i], next_grad))
+        next_grad = OrderedDict(list(zip(grad_ends[i], next_grad)))
         param_grads.extend(param_grad)
     
     pgrads = theano.function(inputs, param_grads)

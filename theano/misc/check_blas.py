@@ -39,32 +39,32 @@ def execute(execute=True, verbose=True, M=2000, N=2000, K=2000,
     """
 
     if verbose:
-        print 'Some Theano flags:'
-        print '    blas.ldflags=', theano.config.blas.ldflags
-        print '    compiledir=', theano.config.compiledir
-        print '    floatX=', theano.config.floatX
-        print '    device=', theano.config.device
-        print 'Some OS information:'
-        print '    sys.platform=', sys.platform
-        print '    sys.version=', sys.version
-        print '    sys.prefix=', sys.prefix
-        print 'Some environment variables:'
-        print '    MKL_NUM_THREADS=', os.getenv('MKL_NUM_THREADS')
-        print '    OMP_NUM_THREADS=', os.getenv('OMP_NUM_THREADS')
-        print '    GOTO_NUM_THREADS=', os.getenv('GOTO_NUM_THREADS')
-        print
+        print('Some Theano flags:')
+        print('    blas.ldflags=', theano.config.blas.ldflags)
+        print('    compiledir=', theano.config.compiledir)
+        print('    floatX=', theano.config.floatX)
+        print('    device=', theano.config.device)
+        print('Some OS information:')
+        print('    sys.platform=', sys.platform)
+        print('    sys.version=', sys.version)
+        print('    sys.prefix=', sys.prefix)
+        print('Some environment variables:')
+        print('    MKL_NUM_THREADS=', os.getenv('MKL_NUM_THREADS'))
+        print('    OMP_NUM_THREADS=', os.getenv('OMP_NUM_THREADS'))
+        print('    GOTO_NUM_THREADS=', os.getenv('GOTO_NUM_THREADS'))
+        print()
         print ('Numpy config: (used when the Theano flag'
                ' "blas.ldflags" is empty)')
         numpy.show_config()
-        print 'Numpy dot module:', numpy.dot.__module__
-        print 'Numpy location:', numpy.__file__
-        print 'Numpy version:', numpy.__version__
+        print('Numpy dot module:', numpy.dot.__module__)
+        print('Numpy location:', numpy.__file__)
+        print('Numpy version:', numpy.__version__)
         if (theano.config.device.startswith("gpu") or
             theano.config.init_gpu_device.startswith("gpu")):
-            print 'nvcc version:'
+            print('nvcc version:')
             subprocess.call((theano.sandbox.cuda.nvcc_compiler.nvcc_path,
                              "--version"))
-            print
+            print()
 
     a = theano.shared(numpy.ones((M, N), dtype=theano.config.floatX,
                                  order=order))
@@ -150,11 +150,11 @@ if __name__ == "__main__":
     options, arguments = parser.parse_args(sys.argv)
 
     if hasattr(options, "help"):
-        print options.help
+        print(options.help)
         sys.exit(0)
 
     if not options.quiet:
-        print """
+        print("""
         Some results that you can compare against. They were 10 executions
         of gemm in float64 with matrices of shape 2000x2000 (M=N=K=2000).
         All memory layout was in C order.
@@ -241,7 +241,7 @@ if __name__ == "__main__":
         GT 220                                                             3.80s
         GT 210                                                      6.35s
         8500 GT                                                                   10.68s
-        """
+        """)
 
     t, impl = execute(not options.print_only, not options.quiet,
                       M=options.M, N=options.N, K=options.K,
@@ -250,17 +250,17 @@ if __name__ == "__main__":
     if options.print_only:
         pass
     elif options.quiet:
-        print t
+        print(t)
     else:
-        print
-        print "We executed", options.iter,
-        print "calls to gemm with a and b matrices of shapes",
-        print "(%d, %d) and (%d, %d)." % (options.M, options.N,
-                                          options.N, options.K)
+        print()
+        print("We executed", options.iter, end=' ')
+        print("calls to gemm with a and b matrices of shapes", end=' ')
+        print("(%d, %d) and (%d, %d)." % (options.M, options.N,
+                                          options.N, options.K))
 
-        print
-        print 'Total execution time: %.2fs on %s.' % (t, impl)
-        print
+        print()
+        print('Total execution time: %.2fs on %s.' % (t, impl))
+        print()
         print ('Try to run this script a few times. Experience shows that'
                ' the first time is not as fast as followings calls. The'
                ' difference is not big, but consistent.')

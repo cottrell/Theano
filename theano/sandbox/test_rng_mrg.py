@@ -445,7 +445,7 @@ def basictest(f, steps, sample_size, prefix="", allow_01=False, inputs=None,
     dt = 0.0
     avg_var = 0.0
 
-    for i in xrange(steps):
+    for i in range(steps):
         t0 = time.time()
         ival = f(*inputs)
         assert ival.shape == sample_size
@@ -775,7 +775,7 @@ def basic_multinomialtest(f, steps, sample_size, target_pvals,
     dt = 0.0
     avg_pvals = numpy.zeros(target_pvals.shape, dtype=config.floatX)
 
-    for i in xrange(steps):
+    for i in range(steps):
         t0 = time.time()
         ival = f()
         assert ival.shape == sample_size
@@ -784,13 +784,13 @@ def basic_multinomialtest(f, steps, sample_size, target_pvals,
         avg_pvals += ival
     avg_pvals /= steps
 
-    print 'random?[:10]\n', numpy.asarray(f()[:10])
-    print prefix, 'mean', avg_pvals
+    print('random?[:10]\n', numpy.asarray(f()[:10]))
+    print(prefix, 'mean', avg_pvals)
     # < mean_rtol, 'bad mean? %s %s' % (str(avg_pvals), str(target_pvals))
-    print numpy.mean(abs(avg_pvals - target_pvals))
-    print prefix, 'time', dt
-    print prefix, 'elements', steps * numpy.prod(target_pvals.shape)
-    print prefix, 'samples/sec', steps * numpy.prod(target_pvals.shape) / dt
+    print(numpy.mean(abs(avg_pvals - target_pvals)))
+    print(prefix, 'time', dt)
+    print(prefix, 'elements', steps * numpy.prod(target_pvals.shape))
+    print(prefix, 'samples/sec', steps * numpy.prod(target_pvals.shape) / dt)
 
 
 def test_multinomial():
@@ -947,9 +947,9 @@ def test_multMatVect():
 if __name__ == "__main__":
     rng = MRG_RandomStreams(numpy.random.randint(2147462579))
     import time
-    print theano.__file__
+    print(theano.__file__)
     pvals = theano.tensor.fmatrix()
     for i in range(10):
         t0 = time.time()
         multinomial = rng.multinomial(pvals=pvals)
-        print time.time() - t0
+        print(time.time() - t0)

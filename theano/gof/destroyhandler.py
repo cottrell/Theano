@@ -3,13 +3,13 @@ Classes and functions for validating graphs that contain view
 and inplace operations.
 """
 import theano
-import toolbox
-import graph
+from . import toolbox
+from . import graph
 from theano.compat.python2x import deque
 from theano.compat.python2x import OrderedDict
 from theano.misc.ordered_set import OrderedSet
 
-from fg import InconsistencyError
+from .fg import InconsistencyError
 
 
 class ProtocolError(Exception):
@@ -350,7 +350,7 @@ if 0:
             root_destroyer = {}  # root -> destroyer apply
 
             for app in self.destroyers:
-                for output_idx, input_idx_list in app.op.destroy_map.items():
+                for output_idx, input_idx_list in list(app.op.destroy_map.items()):
                     if len(input_idx_list) != 1:
                         raise NotImplementedError()
                     input_idx = input_idx_list[0]
@@ -398,7 +398,7 @@ if 0:
                 self.destroyers.add(app)
 
             # add this symbol to the forward and backward maps
-            for o_idx, i_idx_list in getattr(app.op, 'view_map', {}).items():
+            for o_idx, i_idx_list in list(getattr(app.op, 'view_map', {}).items()):
                 if len(i_idx_list) > 1:
                     raise NotImplementedError(
                         'destroying this output invalidates multiple inputs',
@@ -435,7 +435,7 @@ if 0:
             # deleted on_detach().
 
             # UPDATE self.view_i, self.view_o
-            for o_idx, i_idx_list in getattr(app.op, 'view_map', {}).items():
+            for o_idx, i_idx_list in list(getattr(app.op, 'view_map', {}).items()):
                 if len(i_idx_list) > 1:
                     # destroying this output invalidates multiple inputs
                     raise NotImplementedError()
@@ -468,8 +468,8 @@ if 0:
                 self.clients[new_r][app] += 1
 
                 # UPDATE self.view_i, self.view_o
-                for o_idx, i_idx_list in getattr(app.op, 'view_map',
-                                                 {}).items():
+                for o_idx, i_idx_list in list(getattr(app.op, 'view_map',
+                                                 {}).items()):
                     if len(i_idx_list) > 1:
                         # destroying this output invalidates multiple inputs
                         raise NotImplementedError()
@@ -540,7 +540,7 @@ if 0:
                 # add destroyed variable clients as computational dependencies
                 for app in self.destroyers:
                     # for each destroyed input...
-                    for output_idx, input_idx_list in app.op.destroy_map.items():
+                    for output_idx, input_idx_list in list(app.op.destroy_map.items()):
                         destroyed_idx = input_idx_list[0]
                         destroyed_variable = app.inputs[destroyed_idx]
                         root = droot[destroyed_variable]
@@ -608,8 +608,8 @@ if 0:
                         # depend on destroyed_input
                         root_clients = OrderedSet()
                         for r in root_impact:
-                            assert not [a for a, c in self.clients[r].items() if not c]
-                            root_clients.update([a for a, c in self.clients[r].items() if c])
+                            assert not [a for a, c in list(self.clients[r].items()) if not c]
+                            root_clients.update([a for a, c in list(self.clients[r].items()) if c])
                         root_clients.remove(app)
                         if root_clients:
                             rval[app] = root_clients
@@ -753,7 +753,7 @@ class DestroyHandler(toolbox.Bookkeeper):
             root_destroyer = OrderedDict()  # root -> destroyer apply
 
             for app in self.destroyers:
-                for output_idx, input_idx_list in app.op.destroy_map.items():
+                for output_idx, input_idx_list in list(app.op.destroy_map.items()):
                     if len(input_idx_list) != 1:
                         raise NotImplementedError()
                     input_idx = input_idx_list[0]
@@ -801,8 +801,8 @@ class DestroyHandler(toolbox.Bookkeeper):
             self.destroyers.add(app)
 
         # add this symbol to the forward and backward maps
-        for o_idx, i_idx_list in getattr(app.op, 'view_map',
-                                         OrderedDict()).items():
+        for o_idx, i_idx_list in list(getattr(app.op, 'view_map',
+                                         OrderedDict()).items()):
             if len(i_idx_list) > 1:
                 raise NotImplementedError(
                     'destroying this output invalidates multiple inputs',
@@ -840,8 +840,8 @@ class DestroyHandler(toolbox.Bookkeeper):
         # deleted on_detach().
 
         # UPDATE self.view_i, self.view_o
-        for o_idx, i_idx_list in getattr(app.op, 'view_map',
-                                         OrderedDict()).items():
+        for o_idx, i_idx_list in list(getattr(app.op, 'view_map',
+                                         OrderedDict()).items()):
             if len(i_idx_list) > 1:
                 # destroying this output invalidates multiple inputs
                 raise NotImplementedError()
@@ -875,8 +875,8 @@ class DestroyHandler(toolbox.Bookkeeper):
             self.clients[new_r][app] += 1
 
             # UPDATE self.view_i, self.view_o
-            for o_idx, i_idx_list in getattr(app.op, 'view_map',
-                                             OrderedDict()).items():
+            for o_idx, i_idx_list in list(getattr(app.op, 'view_map',
+                                             OrderedDict()).items()):
                 if len(i_idx_list) > 1:
                     # destroying this output invalidates multiple inputs
                     raise NotImplementedError()
@@ -952,7 +952,7 @@ class DestroyHandler(toolbox.Bookkeeper):
             # add destroyed variable clients as computational dependencies
             for app in self.destroyers:
                 # for each destroyed input...
-                for output_idx, input_idx_list in app.op.destroy_map.items():
+                for output_idx, input_idx_list in list(app.op.destroy_map.items()):
                     destroyed_idx = input_idx_list[0]
                     destroyed_variable = app.inputs[destroyed_idx]
                     root = droot[destroyed_variable]
@@ -1015,8 +1015,8 @@ class DestroyHandler(toolbox.Bookkeeper):
                     # depend on destroyed_input
                     root_clients = OrderedSet()
                     for r in root_impact:
-                        assert not [a for a, c in self.clients[r].items() if not c]
-                        root_clients.update([a for a, c in self.clients[r].items() if c])
+                        assert not [a for a, c in list(self.clients[r].items()) if not c]
+                        root_clients.update([a for a, c in list(self.clients[r].items()) if c])
                     root_clients.remove(app)
                     if root_clients:
                         rval[app] = root_clients

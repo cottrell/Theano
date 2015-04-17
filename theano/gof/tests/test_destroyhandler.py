@@ -63,11 +63,11 @@ class MyOp(Op):
 
     def make_node(self, *inputs):
         assert len(inputs) == self.nin
-        inputs = map(as_variable, inputs)
+        inputs = list(map(as_variable, inputs))
         for input in inputs:
             if not isinstance(input.type, MyType):
                 raise Exception("Error 1")
-        outputs = [MyVariable(self.name + "_R") for i in xrange(self.nout)]
+        outputs = [MyVariable(self.name + "_R") for i in range(self.nout)]
         return Apply(self, inputs, outputs)
 
     def __str__(self):
@@ -117,7 +117,7 @@ def consistent(g):
     try:
         assert g.consistent()
     except AssertionError:
-        print "Test failed! The graph was marked as NOT consistent."
+        print("Test failed! The graph was marked as NOT consistent.")
         raise
     # print "Test OK"
 
@@ -127,7 +127,7 @@ def inconsistent(g):
     try:
         assert not g.consistent()
     except AssertionError:
-        print "Test failed! The graph was marked as consistent."
+        print("Test failed! The graph was marked as consistent.")
         raise
     # print "Test OK"
 
@@ -349,7 +349,7 @@ def test_multi_destroyers():
     try:
         g = Env([x, y, z], [e])
         raise Exception("Shouldn't have reached this point.")
-    except InconsistencyError, e:
+    except InconsistencyError as e:
         pass
 
 

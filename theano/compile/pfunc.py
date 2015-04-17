@@ -141,7 +141,7 @@ def rebuild_collect_shared(outputs,
     if replace is None:
         replace = []
     try:
-        replace_pairs = replace.items()
+        replace_pairs = list(replace.items())
     except Exception:
         replace_pairs = replace
 
@@ -200,7 +200,7 @@ def rebuild_collect_shared(outputs,
         # filter_variable ensure smooth conversion of cpu/gpu Types
         try:
             update_val = store_into.type.filter_variable(update_val)
-        except TypeError, e:
+        except TypeError as e:
             err_msg = ('An update must have the same type as the'
                        ' original shared variable (shared_var=%s,'
                        ' shared_var.type=%s,'
@@ -463,7 +463,7 @@ def pfunc(params, outputs=None, mode=None, updates=None, givens=None,
     # this typically does nothing, contrary to what one may expect.
     in_var_set = set(in_variables)
     try:
-        givens_pairs = givens.items()
+        givens_pairs = list(givens.items())
     except AttributeError:
         givens_pairs = givens
     for x, y in givens_pairs:
@@ -543,6 +543,6 @@ def iter_over_pairs(pairs):
 
     """
     if isinstance(pairs, dict):
-        return pairs.iteritems()
+        return iter(pairs.items())
     else:
         return pairs

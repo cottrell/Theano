@@ -1,5 +1,5 @@
 import unittest
-from itertools import izip
+
 from copy import copy, deepcopy
 
 import numpy
@@ -68,7 +68,7 @@ def may_fail(msg, EClass):
         def wrapper():
             try:
                 f()
-            except Exception, e:
+            except Exception as e:
                 if isinstance(e, EClass):
                     raise KnownFailureTest(msg, e)
                 raise
@@ -103,7 +103,7 @@ def rand_gpuarray(*shape, **kwargs):
     dtype = kwargs.pop('dtype', theano.config.floatX)
     cls = kwargs.pop('cls', None)
     if len(kwargs) != 0:
-        raise TypeError('Unexpected argument %s', kwargs.keys()[0])
+        raise TypeError('Unexpected argument %s', list(kwargs.keys())[0])
     return gpuarray.array(r, dtype=dtype, cls=cls)
 
 
@@ -132,7 +132,7 @@ def makeTester(name, op, gpu_op, cases, checks=None, mode_gpu=mode_with_gpu,
             if skip:
                 raise SkipTest(skip)
 
-            for testname, inputs in cases.items():
+            for testname, inputs in list(cases.items()):
                 self.run_case(testname, inputs)
 
         def run_case(self, testname, inputs):
@@ -142,7 +142,7 @@ def makeTester(name, op, gpu_op, cases, checks=None, mode_gpu=mode_with_gpu,
             try:
                 node_ref = safe_make_node(self.op, *inputs_ref)
                 node_tst = safe_make_node(self.op, *inputs_tst)
-            except Exception, exc:
+            except Exception as exc:
                 err_msg = ("Test %s::%s: Error occured while making "
                            "a node with inputs %s") % (self.gpu_op, testname,
                                                        inputs)
@@ -152,7 +152,7 @@ def makeTester(name, op, gpu_op, cases, checks=None, mode_gpu=mode_with_gpu,
             try:
                 f_ref = inplace_func([], node_ref.outputs, mode=mode_nogpu)
                 f_tst = inplace_func([], node_tst.outputs, mode=mode_gpu)
-            except Exception, exc:
+            except Exception as exc:
                 err_msg = ("Test %s::%s: Error occured while trying to "
                            "make a Function") % (self.gpu_op, testname)
                 exc.args += (err_msg,)
@@ -163,12 +163,12 @@ def makeTester(name, op, gpu_op, cases, checks=None, mode_gpu=mode_with_gpu,
             ref_e = None
             try:
                 expecteds = f_ref()
-            except Exception, exc:
+            except Exception as exc:
                 ref_e = exc
 
             try:
                 variables = f_tst()
-            except Exception, exc:
+            except Exception as exc:
                 if ref_e is None:
                     err_msg = ("Test %s::%s: exception when calling the "
                                "Function") % (self.gpu_op, testname)
@@ -188,7 +188,7 @@ def makeTester(name, op, gpu_op, cases, checks=None, mode_gpu=mode_with_gpu,
                         raise
 
             for i, (variable, expected) in \
-                    enumerate(izip(variables, expecteds)):
+                    enumerate(zip(variables, expecteds)):
                 if variable.dtype != expected.dtype or \
                         variable.shape != expected.shape or \
                         not TensorType.values_eq_approx(variable,
@@ -199,7 +199,7 @@ def makeTester(name, op, gpu_op, cases, checks=None, mode_gpu=mode_with_gpu,
                             self.op, testname, i, inputs, expected,
                             expected.dtype, variable, variable.dtype))
 
-            for description, check in self.checks.items():
+            for description, check in list(self.checks.items()):
                 if not check(inputs, variables):
                     self.fail(("Test %s::%s: Failed check: %s "
                                "(inputs were %s, ouputs were %s)") %

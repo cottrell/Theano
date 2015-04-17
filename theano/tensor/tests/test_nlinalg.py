@@ -101,7 +101,7 @@ def test_matrix_dot():
     n = rng.randint(4) + 2
     rs = []
     xs = []
-    for k in xrange(n):
+    for k in range(n):
         rs += [rng.randn(4, 4).astype(theano.config.floatX)]
         xs += [tensor.matrix()]
     sol = matrix_dot(*xs)
@@ -140,7 +140,7 @@ def test_qr_modes():
         f = function([A], qr(A, "complete"))
         t_qr = f(a)
         assert _allclose(n_qr, t_qr)
-    except TypeError, e:
+    except TypeError as e:
         assert "name 'complete' is not defined" in str(e)
 
 
@@ -389,7 +389,7 @@ class test_Eig(utt.InferShapeTester):
 
     def test_eval(self):
         A = theano.tensor.matrix(dtype=self.dtype)
-        self.assertEquals([e.eval({A: [[1]]}) for e in self.op(A)],
+        self.assertEqual([e.eval({A: [[1]]}) for e in self.op(A)],
                           [[1.0], [[1.0]]])
         x = [[0, 1], [1, 0]]
         w, v = [e.eval({A: x}) for e in self.op(A)]

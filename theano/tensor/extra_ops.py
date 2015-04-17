@@ -593,7 +593,9 @@ class RepeatOp(theano.Op):
 
         return [[True], [False]]
 
-    def grad(self, (x, repeats), (gz, )):
+    def grad(self, xxx_todo_changeme, xxx_todo_changeme1):
+        (x, repeats) = xxx_todo_changeme
+        (gz, ) = xxx_todo_changeme1
         if repeats.ndim == 0:
             if self.axis is None:
                 axis = x.ndim
@@ -684,7 +686,7 @@ def repeat(x, repeats, axis=None):
             if axis < 0:
                 axis = x.ndim+axis
 
-        shape = [x.shape[i] for i in xrange(x.ndim)]
+        shape = [x.shape[i] for i in range(x.ndim)]
         
         # shape_ is the shape of the intermediate tensor which has
         # an additional dimension comparing to x. We use alloc to

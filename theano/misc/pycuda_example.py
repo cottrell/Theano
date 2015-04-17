@@ -30,7 +30,7 @@ from theano.sandbox.cuda.basic_ops import (as_cuda_ndarray_variable,
 from theano.sandbox.cuda.opt import gpu_seqopt
 from theano.tensor.utils import hash_from_dict
 
-import pycuda_init
+from . import pycuda_init
 if not pycuda_init.pycuda_available:
     raise Exception("No pycuda available. You can't load pycuda_example.py")
 
@@ -192,7 +192,7 @@ class PycudaElemwiseSourceModuleOp(GpuOp):
     def __str__(self):
         if self.name is None:
             if self.inplace_pattern:
-                items = self.inplace_pattern.items()
+                items = list(self.inplace_pattern.items())
                 items.sort()
                 return self.__class__.__name__ + "{%s}%s" % (self.scalar_op,
                                                              str(items))
@@ -226,16 +226,16 @@ class PycudaElemwiseSourceModuleOp(GpuOp):
         assert self.nout == 1
 
         fct_name = "pycuda_elemwise_%s" % str(self.scalar_op)
-        out_node = Apply(self, _inputs, [otype() for o in xrange(self.nout)])
+        out_node = Apply(self, _inputs, [otype() for o in range(self.nout)])
         in_name = ["i" + str(id) for id in range(len(inputs))]
         out_name = ["o" + str(id) for id in range(self.nout)]
         c_code = self.scalar_op.c_code(out_node, "some_name",
                                        tuple([n + "[i]" for n in in_name]),
                                        tuple(n + "[i]" for n in out_name), {})
         c_code_param = ", ".join([_replace_npy_types(var.type.dtype_specs()[1]) + " *" + name
-                                  for var, name in (zip(inputs, in_name) +
-                                                    zip(out_node.outputs,
-                                                        out_name))] +
+                                  for var, name in (list(zip(inputs, in_name)) +
+                                                    list(zip(out_node.outputs,
+                                                        out_name)))] +
                                  ["int size"])
         mod = SourceModule("""
   __global__ void %s(%s)
@@ -286,7 +286,7 @@ class PycudaElemwiseSourceModuleMakeThunkOp(Op):
     def __str__(self):
         if self.name is None:
             if self.inplace_pattern:
-                items = self.inplace_pattern.items()
+                items = list(self.inplace_pattern.items())
                 items.sort()
                 return self.__class__.__name__ + "{%s}%s" % (self.scalar_op,
                                                              str(items))
@@ -309,7 +309,7 @@ class PycudaElemwiseSourceModuleMakeThunkOp(Op):
             raise Exception("pycuda don't support broadcasted dimensions")
 
         otype = CudaNdarrayType(broadcastable=[False] * _inputs[0].type.ndim)
-        out_node = Apply(self, _inputs, [otype() for o in xrange(self.nout)])
+        out_node = Apply(self, _inputs, [otype() for o in range(self.nout)])
         return out_node
 
     def make_thunk(self, node, storage_map, _, _2):
@@ -324,8 +324,8 @@ class PycudaElemwiseSourceModuleMakeThunkOp(Op):
                                        tuple(n + "[i]" for n in out_name), {})
         c_code_param = ", ".join([_replace_npy_types(var.type.dtype_specs()[1]) + " *" + name
                                   for var, name in
-                                  zip(node.inputs, in_name) +
-                                  zip(node.outputs, out_name)] + ["int size"])
+                                  list(zip(node.inputs, in_name)) +
+                                  list(zip(node.outputs, out_name))] + ["int size"])
         mod = SourceModule("""
   __global__ void %s(%s)
   {

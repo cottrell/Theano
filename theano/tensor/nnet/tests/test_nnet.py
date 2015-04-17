@@ -1214,11 +1214,11 @@ def test_asymptotic_32():
                             tensor.grad(c.sum(), x)], mode='FAST_RUN')
         if 0:
             for i, n in enumerate(f.maker.fgraph.toposort()):
-                print i, n
+                print(i, n)
 
         xval = numpy.zeros((5, 5), dtype=dtype).astype(dtype)
         x2val = numpy.zeros(5, dtype=xval.dtype).astype(dtype)
-        for i in xrange(100):
+        for i in range(100):
             cval, gxval = f(xval, numpy.arange(5), x2val)
             xval -= 100.3 * gxval
             # print cval, gxval
@@ -1228,7 +1228,7 @@ def test_asymptotic_32():
 
         xval = numpy.zeros((5, 5), dtype=dtype)
         x2val = numpy.zeros(5, dtype=xval.dtype)
-        for i in xrange(100):
+        for i in range(100):
 
             cval, gxval = f(xval, numpy.arange(5), x2val)
             xval += 100000.3 * gxval

@@ -1,4 +1,4 @@
-from itertools import izip
+
 
 import numpy
 import scipy
@@ -27,7 +27,7 @@ def local_csm_properties_csm(node):
             # csm.owner.inputs could be broadcastable. In that case, we have
             # to adjust the broadcasting flag here.
             ret_var = [theano.tensor.patternbroadcast(i, o.broadcastable)
-                       for i, o in izip(csm.owner.inputs, node.outputs)]
+                       for i, o in zip(csm.owner.inputs, node.outputs)]
             return ret_var
 
     return False
@@ -105,7 +105,9 @@ class AddSD_ccode(gof.op.Op):
                          [data, indices, indptr, y],
                          [out])
 
-    def c_code(self, node, name, (_data, _indices, _indptr, y), (z, ), sub):
+    def c_code(self, node, name, xxx_todo_changeme, xxx_todo_changeme1, sub):
+        (_data, _indices, _indptr, y) = xxx_todo_changeme
+        (z, ) = xxx_todo_changeme1
         inplace = int(self.inplace)
         format = {'csc': 0, 'csr': 1}[self.format]
         out_typenum = node.outputs[0].type.dtype_specs()[2]
@@ -236,7 +238,9 @@ class StructuredDotCSC(gof.Op):
                 [tensor.tensor(dtype_out, (False, b.type.broadcastable[1]))])
         return r
 
-    def perform(self, node, (a_val, a_ind, a_ptr, a_nrows, b), (out,)):
+    def perform(self, node, xxx_todo_changeme2, xxx_todo_changeme3):
+        (a_val, a_ind, a_ptr, a_nrows, b) = xxx_todo_changeme2
+        (out,) = xxx_todo_changeme3
         a = scipy.sparse.csc_matrix((a_val, a_ind, a_ptr),
                 (a_nrows, b.shape[0]),
                 copy=False)
@@ -244,7 +248,7 @@ class StructuredDotCSC(gof.Op):
         out[0] = theano._asarray(a * b, dtype=node.outputs[0].type.dtype)
         assert _is_dense(out[0])  # scipy 0.7 automatically converts to dense
 
-    def c_code(self, node, name, (a_val, a_ind, a_ptr, a_nrows, b), (z,), sub):
+    def c_code(self, node, name, xxx_todo_changeme4, xxx_todo_changeme5, sub):
         # C-implementation of the dot product of the sparse matrix A and matrix
         # B.
         # @param a_val: non-zero values of the sparse matrix
@@ -257,6 +261,8 @@ class StructuredDotCSC(gof.Op):
         # @param z: return value
         # @param sub: TODO, not too sure, something to do with weave probably
 
+        (a_val, a_ind, a_ptr, a_nrows, b) = xxx_todo_changeme4
+        (z,) = xxx_todo_changeme5
         if node.inputs[0].type.dtype in ('complex64', 'complex128'):
             raise NotImplementedError('Complex types are not supported for a_val')
         if node.inputs[4].type.dtype in ('complex64', 'complex128'):
@@ -426,7 +432,9 @@ class StructuredDotCSR(gof.Op):
                                                 b.type.broadcastable[1]))])
         return r
 
-    def perform(self, node, (a_val, a_ind, a_ptr, b), (out,)):
+    def perform(self, node, xxx_todo_changeme6, xxx_todo_changeme7):
+        (a_val, a_ind, a_ptr, b) = xxx_todo_changeme6
+        (out,) = xxx_todo_changeme7
         a = scipy.sparse.csr_matrix((a_val, a_ind, a_ptr),
                 (len(a_ptr) - 1, b.shape[0]),
                 copy=True)  # use view_map before setting this to False
@@ -435,7 +443,7 @@ class StructuredDotCSR(gof.Op):
         # scipy 0.7 automatically converts to dense, but not .6 sometimes
         assert _is_dense(out[0])
 
-    def c_code(self, node, name, (a_val, a_ind, a_ptr, b), (z,), sub):
+    def c_code(self, node, name, xxx_todo_changeme8, xxx_todo_changeme9, sub):
         """
         C-implementation of the dot product of the sparse matrix A and matrix
         B.
@@ -449,7 +457,8 @@ class StructuredDotCSR(gof.Op):
         @param z: return value
         @param sub: TODO, not too sure, something to do with weave probably
         """
-        # retrieve dtype number
+        (a_val, a_ind, a_ptr, b) = xxx_todo_changeme8
+        (z,) = xxx_todo_changeme9
         typenum_z = tensor.TensorType(self.dtype_out, []).dtype_specs()[2]
         if node.inputs[0].type.dtype in ('complex64', 'complex128'):
             raise NotImplementedError('Complex types are not supported for a_val')
@@ -890,9 +899,11 @@ class CSMGradC(gof.Op):
         return gof.Apply(self, [a_val, a_ind, a_ptr, a_dim,
              b_val, b_ind, b_ptr, b_dim], [b_val.type()])
 
-    def c_code(self, node, name, (a_val, a_ind, a_ptr, a_dim,
-                        b_val, b_ind, b_ptr, b_dim), (z,), sub):
+    def c_code(self, node, name, xxx_todo_changeme10, xxx_todo_changeme11, sub):
         # retrieve dtype number
+        (a_val, a_ind, a_ptr, a_dim,
+                        b_val, b_ind, b_ptr, b_dim) = xxx_todo_changeme10
+        (z,) = xxx_todo_changeme11
         typenum_z = node.outputs[0].type.dtype_specs()[2]
         if node.inputs[0].type.dtype in ('complex64', 'complex128'):
             raise NotImplementedError('Complex types are not supported for a_val')
@@ -1047,9 +1058,10 @@ class MulSDCSC(gof.Op):
     # def perform(self, node, (a_data, a_indices, a_indptr, b), (out,)):
     #    return NotImplementedError()
 
-    def c_code(self, node, name, (_data, _indices, _indptr, _b,),
-               (_zout, ), sub):
+    def c_code(self, node, name, xxx_todo_changeme12, xxx_todo_changeme13, sub):
 
+        (_data, _indices, _indptr, _b,) = xxx_todo_changeme12
+        (_zout, ) = xxx_todo_changeme13
         if node.inputs[0].type.dtype in ('complex64', 'complex128'):
             raise NotImplementedError('Complex types are not supported for a')
         if node.inputs[3].type.dtype in ('complex64', 'complex128'):
@@ -1163,9 +1175,10 @@ class MulSDCSR(gof.Op):
     # def perform(self, node, (a_data, a_indices, a_indptr, b), (out,)):
     #    return NotImplemented()
 
-    def c_code(self, node, name, (_data, _indices, _indptr, _b,),
-               (_zout, ), sub):
+    def c_code(self, node, name, xxx_todo_changeme14, xxx_todo_changeme15, sub):
 
+        (_data, _indices, _indptr, _b,) = xxx_todo_changeme14
+        (_zout, ) = xxx_todo_changeme15
         if node.inputs[0].type.dtype in ('complex64', 'complex128'):
             raise NotImplementedError('Complex types are not supported for a')
         if node.inputs[3].type.dtype in ('complex64', 'complex128'):
